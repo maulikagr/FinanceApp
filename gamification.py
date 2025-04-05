@@ -290,7 +290,6 @@ class GamificationSystem:
                     for user_id, char_data in state['characters'].items()
                 }
         except FileNotFoundError:
-<<<<<<< Updated upstream
             pass  # Start with empty state if file doesn't exist
 
 
@@ -341,6 +340,3 @@ if __name__ == "__main__":
     print("Character level: {}".format(character.level.name))
     print("Character coins: {}".format(character.coins))
     print("Character experience: {}".format(character.experience))
-=======
-            pass  # Start with empty state if file doesn't exist 
->>>>>>> Stashed changes
