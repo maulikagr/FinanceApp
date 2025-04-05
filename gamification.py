@@ -48,643 +48,249 @@ class Character:
         self.character_class = character_class
         self.level = CharacterLevel.NOVICE
         self.experience = 0
-        self.coins = 0
+        self.coins = 100  # Starting coins
         self.streak = 0
         self.last_login = datetime.now()
-        self.inventory = {
-            "outfits": [],
-            "accessories": [],
-            "pets": []
-        }
-        self.unlocked_features = []
-        self.achievements = []
-        
-    def add_experience(self, amount):
-        """Add experience points and check for level up"""
-        self.experience += amount
-        return self._check_level_up()
-    
-    def _check_level_up(self):
-        """Check if character should level up based on experience"""
-        level_thresholds = {
-            CharacterLevel.NOVICE: 100,
-            CharacterLevel.APPRENTICE: 300,
-            CharacterLevel.INTERMEDIATE: 600,
-            CharacterLevel.ADVANCED: 1000,
-            CharacterLevel.EXPERT: 2000,
-            CharacterLevel.MASTER: 5000
-        }
-        
-        for level, threshold in level_thresholds.items():
-            if self.level == level and self.experience >= threshold:
-                next_level = CharacterLevel(level.value + 1)
-                self.level = next_level
-                self._grant_level_up_rewards()
-                return True
-        return False
-    
-    def _grant_level_up_rewards(self):
-        """Grant rewards for leveling up"""
-        # Grant coins based on level
-        coin_rewards = {
-            CharacterLevel.APPRENTICE: 50,
-            CharacterLevel.INTERMEDIATE: 100,
-            CharacterLevel.ADVANCED: 200,
-            CharacterLevel.EXPERT: 500,
-            CharacterLevel.MASTER: 1000
-        }
-        
-        if self.level in coin_rewards:
-            self.coins += coin_rewards[self.level]
-            
-        # Unlock new features based on level
-        feature_unlocks = {
-            CharacterLevel.APPRENTICE: ["basic_outfits"],
-            CharacterLevel.INTERMEDIATE: ["premium_outfits", "basic_pets"],
-            CharacterLevel.ADVANCED: ["premium_pets", "special_accessories"],
-            CharacterLevel.EXPERT: ["rare_outfits", "rare_pets"],
-            CharacterLevel.MASTER: ["legendary_outfits", "legendary_pets"]
-        }
-        
-        if self.level in feature_unlocks:
-            self.unlocked_features.extend(feature_unlocks[self.level])
-    
-    def add_coins(self, amount):
-        """Add coins to the character's balance"""
-        self.coins += amount
-    
-    def spend_coins(self, amount):
-        """Spend coins if enough are available"""
-        if self.coins >= amount:
-            self.coins -= amount
-            return True
-        return False
-    
-    def update_streak(self):
-        """Update the login streak"""
-        today = datetime.now().date()
-        last_login_date = self.last_login.date()
-        
-        if today == last_login_date:
-            return  # Already logged in today
-        
-        if today == last_login_date + timedelta(days=1):
-            self.streak += 1
-        else:
-            self.streak = 1
-            
-        self.last_login = datetime.now()
-    
-    def add_to_inventory(self, item_type, item_id):
-        """Add an item to the character's inventory"""
-        if item_type in self.inventory:
-            self.inventory[item_type].append(item_id)
-    
-    def add_achievement(self, achievement_id):
-        """Add an achievement to the character's list"""
-        if achievement_id not in self.achievements:
-            self.achievements.append(achievement_id)
+        self.inventory = []
+        self.active_missions = []
+        self.active_challenges = []
     
     def to_dict(self):
-        """Convert character to dictionary for storage"""
         return {
-            "user_id": self.user_id,
-            "name": self.name,
-            "character_class": self.character_class.value,
-            "level": self.level.value,
-            "experience": self.experience,
-            "coins": self.coins,
-            "streak": self.streak,
-            "last_login": self.last_login.isoformat(),
-            "inventory": self.inventory,
-            "unlocked_features": self.unlocked_features,
-            "achievements": self.achievements
+            'user_id': self.user_id,
+            'name': self.name,
+            'character_class': self.character_class.name,
+            'level': self.level.name,
+            'experience': self.experience,
+            'coins': self.coins,
+            'streak': self.streak,
+            'last_login': self.last_login.isoformat(),
+            'inventory': self.inventory,
+            'active_missions': [m.to_dict() for m in self.active_missions],
+            'active_challenges': [c.to_dict() for c in self.active_challenges]
         }
     
     @classmethod
     def from_dict(cls, data):
-        """Create a character from a dictionary"""
         character = cls(
-            user_id=data["user_id"],
-            name=data["name"],
-            character_class=CharacterClass(data["character_class"])
+            data['user_id'],
+            data['name'],
+            CharacterClass[data['character_class']]
         )
-        character.level = CharacterLevel(data["level"])
-        character.experience = data["experience"]
-        character.coins = data["coins"]
-        character.streak = data["streak"]
-        character.last_login = datetime.fromisoformat(data["last_login"])
-        character.inventory = data["inventory"]
-        character.unlocked_features = data["unlocked_features"]
-        character.achievements = data["achievements"]
+        character.level = CharacterLevel[data['level']]
+        character.experience = data['experience']
+        character.coins = data['coins']
+        character.streak = data['streak']
+        character.last_login = datetime.fromisoformat(data['last_login'])
+        character.inventory = data['inventory']
+        character.active_missions = [Mission.from_dict(m) for m in data['active_missions']]
+        character.active_challenges = [Challenge.from_dict(c) for c in data['active_challenges']]
         return character
 
 
 class Mission:
-    """Represents a mission that users can complete for rewards"""
+    """Represents a mission that a character can complete"""
     
-    def __init__(
-        self, 
-        mission_id,
-        title,
-        description,
-        mission_type,
-        reward_coins,
-        reward_exp,
-        requirements,
-        duration_days=1
-    ):
-        self.mission_id = mission_id
+    def __init__(self, title, description, mission_type, reward_coins, reward_exp):
         self.title = title
         self.description = description
         self.mission_type = mission_type
         self.reward_coins = reward_coins
         self.reward_exp = reward_exp
-        self.requirements = requirements
-        self.duration_days = duration_days
-        self.start_date = None
-        self.completion_date = None
         self.is_completed = False
-    
-    def start(self):
-        """Start the mission"""
-        self.start_date = datetime.now()
-        self.is_completed = False
-    
-    def check_completion(self, user_data):
-        """Check if the mission is completed based on user data"""
-        if self.is_completed:
-            return True
-            
-        # Check each requirement against user data
-        for key, value in self.requirements.items():
-            if key not in user_data or user_data[key] < value:
-                return False
-                
-        self.completion_date = datetime.now()
-        self.is_completed = True
-        return True
+        self.created_at = datetime.now()
     
     def to_dict(self):
-        """Convert mission to dictionary for storage"""
         return {
-            "mission_id": self.mission_id,
-            "title": self.title,
-            "description": self.description,
-            "mission_type": self.mission_type.value,
-            "reward_coins": self.reward_coins,
-            "reward_exp": self.reward_exp,
-            "requirements": self.requirements,
-            "duration_days": self.duration_days,
-            "start_date": self.start_date.isoformat() if self.start_date else None,
-            "completion_date": self.completion_date.isoformat() if self.completion_date else None,
-            "is_completed": self.is_completed
+            'title': self.title,
+            'description': self.description,
+            'mission_type': self.mission_type.name,
+            'reward_coins': self.reward_coins,
+            'reward_exp': self.reward_exp,
+            'is_completed': self.is_completed,
+            'created_at': self.created_at.isoformat()
         }
     
     @classmethod
     def from_dict(cls, data):
-        """Create a mission from a dictionary"""
         mission = cls(
-            mission_id=data["mission_id"],
-            title=data["title"],
-            description=data["description"],
-            mission_type=MissionType(data["mission_type"]),
-            reward_coins=data["reward_coins"],
-            reward_exp=data["reward_exp"],
-            requirements=data["requirements"],
-            duration_days=data["duration_days"]
+            data['title'],
+            data['description'],
+            MissionType[data['mission_type']],
+            data['reward_coins'],
+            data['reward_exp']
         )
-        
-        if data["start_date"]:
-            mission.start_date = datetime.fromisoformat(data["start_date"])
-        if data["completion_date"]:
-            mission.completion_date = datetime.fromisoformat(data["completion_date"])
-        mission.is_completed = data["is_completed"]
-        
+        mission.is_completed = data['is_completed']
+        mission.created_at = datetime.fromisoformat(data['created_at'])
         return mission
 
 
 class Challenge:
-    """Represents a challenge that users can participate in for rewards"""
+    """Represents a challenge that a character can participate in"""
     
-    def __init__(
-        self, 
-        challenge_id,
-        title,
-        description,
-        challenge_type,
-        reward_coins,
-        reward_exp,
-        requirements,
-        duration_days,
-        difficulty
-    ):
-        self.challenge_id = challenge_id
+    def __init__(self, title, description, challenge_type, difficulty, reward_coins, reward_exp):
         self.title = title
         self.description = description
         self.challenge_type = challenge_type
+        self.difficulty = difficulty
         self.reward_coins = reward_coins
         self.reward_exp = reward_exp
-        self.requirements = requirements
-        self.duration_days = duration_days
-        self.difficulty = difficulty
-        self.start_date = None
-        self.end_date = None
-        self.is_completed = False
-        self.progress = 0.0  # Progress as a percentage
-    
-    def start(self):
-        """Start the challenge"""
-        self.start_date = datetime.now()
-        self.end_date = self.start_date + timedelta(days=self.duration_days)
-        self.is_completed = False
         self.progress = 0.0
-    
-    def update_progress(self, user_data):
-        """Update the progress of the challenge based on user data"""
-        if self.is_completed:
-            return 100.0
-            
-        # Calculate progress based on requirements
-        total_progress = 0.0
-        for key, target in self.requirements.items():
-            if key in user_data:
-                current = min(user_data[key], target)  # Cap at target
-                progress = (current / target) * 100
-                total_progress += progress
-                
-        self.progress = total_progress / len(self.requirements)
-        
-        # Check if challenge is completed
-        if self.progress >= 100.0:
-            self.is_completed = True
-            
-        return self.progress
-    
-    def is_expired(self):
-        """Check if the challenge has expired"""
-        if not self.end_date:
-            return False
-        return datetime.now() > self.end_date
+        self.is_completed = False
+        self.created_at = datetime.now()
     
     def to_dict(self):
-        """Convert challenge to dictionary for storage"""
         return {
-            "challenge_id": self.challenge_id,
-            "title": self.title,
-            "description": self.description,
-            "challenge_type": self.challenge_type.value,
-            "reward_coins": self.reward_coins,
-            "reward_exp": self.reward_exp,
-            "requirements": self.requirements,
-            "duration_days": self.duration_days,
-            "difficulty": self.difficulty,
-            "start_date": self.start_date.isoformat() if self.start_date else None,
-            "end_date": self.end_date.isoformat() if self.end_date else None,
-            "is_completed": self.is_completed,
-            "progress": self.progress
+            'title': self.title,
+            'description': self.description,
+            'challenge_type': self.challenge_type.name,
+            'difficulty': self.difficulty,
+            'reward_coins': self.reward_coins,
+            'reward_exp': self.reward_exp,
+            'progress': self.progress,
+            'is_completed': self.is_completed,
+            'created_at': self.created_at.isoformat()
         }
     
     @classmethod
     def from_dict(cls, data):
-        """Create a challenge from a dictionary"""
         challenge = cls(
-            challenge_id=data["challenge_id"],
-            title=data["title"],
-            description=data["description"],
-            challenge_type=ChallengeType(data["challenge_type"]),
-            reward_coins=data["reward_coins"],
-            reward_exp=data["reward_exp"],
-            requirements=data["requirements"],
-            duration_days=data["duration_days"],
-            difficulty=data["difficulty"]
+            data['title'],
+            data['description'],
+            ChallengeType[data['challenge_type']],
+            data['difficulty'],
+            data['reward_coins'],
+            data['reward_exp']
         )
-        
-        if data["start_date"]:
-            challenge.start_date = datetime.fromisoformat(data["start_date"])
-        if data["end_date"]:
-            challenge.end_date = datetime.fromisoformat(data["end_date"])
-        challenge.is_completed = data["is_completed"]
-        challenge.progress = data["progress"]
-        
+        challenge.progress = data['progress']
+        challenge.is_completed = data['is_completed']
+        challenge.created_at = datetime.fromisoformat(data['created_at'])
         return challenge
 
 
 class GamificationSystem:
-    """Manages the gamification features of the app"""
+    """Manages the gamification system for the finance app"""
     
     def __init__(self):
-        self.characters = {}  # user_id -> Character
-        self.active_missions = {}  # user_id -> List[Mission]
-        self.active_challenges = {}  # user_id -> List[Challenge]
-        self.mission_templates = self._load_mission_templates()
-        self.challenge_templates = self._load_challenge_templates()
+        self.characters = {}
+        self.mission_templates = self._generate_mission_templates()
+        self.challenge_templates = self._generate_challenge_templates()
     
-    def _load_mission_templates(self):
-        """Load predefined mission templates"""
+    def _generate_mission_templates(self):
         return [
-            Mission(
-                mission_id="daily_login",
-                title="Daily Login",
-                description="Log in to the app today",
-                mission_type=MissionType.DAILY,
-                reward_coins=10,
-                reward_exp=5,
-                requirements={"login": 1}
-            ),
-            Mission(
-                mission_id="cook_meals",
-                title="Home Chef",
-                description="Cook 3 meals at home this week",
-                mission_type=MissionType.WEEKLY,
-                reward_coins=50,
-                reward_exp=25,
-                requirements={"cooked_meals": 3}
-            ),
-            Mission(
-                mission_id="skip_impulse",
-                title="Impulse Control",
-                description="Skip impulse buys for 3 days",
-                mission_type=MissionType.WEEKLY,
-                reward_coins=75,
-                reward_exp=40,
-                requirements={"days_without_impulse": 3}
-            ),
-            Mission(
-                mission_id="save_target",
-                title="Savings Goal",
-                description="Reach your monthly savings target",
-                mission_type=MissionType.MONTHLY,
-                reward_coins=200,
-                reward_exp=100,
-                requirements={"savings_target_reached": 1}
-            ),
-            Mission(
-                mission_id="budget_stick",
-                title="Budget Master",
-                description="Stay under budget in all categories this month",
-                mission_type=MissionType.MONTHLY,
-                reward_coins=300,
-                reward_exp=150,
-                requirements={"budget_categories_under": 5}
-            )
+            Mission("Daily Login", "Log in to the app", MissionType.DAILY, 10, 5),
+            Mission("Save $10", "Save $10 today", MissionType.DAILY, 20, 10),
+            Mission("Weekly Budget Review", "Review your weekly budget", MissionType.WEEKLY, 50, 25),
+            Mission("Monthly Investment", "Make a monthly investment", MissionType.MONTHLY, 100, 50),
         ]
     
-    def _load_challenge_templates(self):
-        """Load predefined challenge templates"""
+    def _generate_challenge_templates(self):
         return [
-            Challenge(
-                challenge_id="no_eating_out",
-                title="Restaurant Free Week",
-                description="Don't eat out for an entire week",
-                challenge_type=ChallengeType.SPENDING,
-                reward_coins=100,
-                reward_exp=50,
-                requirements={"days_without_eating_out": 7},
-                duration_days=7,
-                difficulty="Medium"
-            ),
-            Challenge(
-                challenge_id="double_savings",
-                title="Double Savings",
-                description="Double your usual savings amount for a month",
-                challenge_type=ChallengeType.SAVING,
-                reward_coins=500,
-                reward_exp=250,
-                requirements={"savings_multiplier": 2},
-                duration_days=30,
-                difficulty="Hard"
-            ),
-            Challenge(
-                challenge_id="side_hustle",
-                title="Side Hustle Hero",
-                description="Earn extra income through a side gig",
-                challenge_type=ChallengeType.EARNING,
-                reward_coins=300,
-                reward_exp=150,
-                requirements={"side_income_earned": 500},
-                duration_days=30,
-                difficulty="Medium"
-            ),
-            Challenge(
-                challenge_id="investment_starter",
-                title="Investment Starter",
-                description="Make your first investment",
-                challenge_type=ChallengeType.INVESTING,
-                reward_coins=200,
-                reward_exp=100,
-                requirements={"investments_made": 1},
-                duration_days=14,
-                difficulty="Easy"
-            ),
-            Challenge(
-                challenge_id="budget_optimizer",
-                title="Budget Optimizer",
-                description="Reduce your monthly expenses by 10%",
-                challenge_type=ChallengeType.BUDGETING,
-                reward_coins=400,
-                reward_exp=200,
-                requirements={"expense_reduction_percent": 10},
-                duration_days=30,
-                difficulty="Hard"
-            )
+            Challenge("Saving Streak", "Maintain a saving streak for 7 days", ChallengeType.SAVING, "Easy", 100, 50),
+            Challenge("Investment Master", "Make 5 investments this month", ChallengeType.INVESTING, "Medium", 200, 100),
+            Challenge("Budget Expert", "Stay within budget for 30 days", ChallengeType.BUDGETING, "Hard", 300, 150),
         ]
     
     def create_character(self, user_id, name, character_class):
-        """Create a new character for a user"""
+        if user_id in self.characters:
+            raise ValueError("Character already exists for this user ID")
+        
         character = Character(user_id, name, character_class)
         self.characters[user_id] = character
         return character
     
     def get_character(self, user_id):
-        """Get a user's character"""
         return self.characters.get(user_id)
     
-    def assign_missions(self, user_id, count=3):
-        """Assign random missions to a user"""
-        if user_id not in self.active_missions:
-            self.active_missions[user_id] = []
-            
-        # Filter out missions that are already active
-        available_missions = [
-            mission for mission in self.mission_templates
-            if mission.mission_id not in [m.mission_id for m in self.active_missions[user_id]]
-        ]
+    def assign_missions(self, user_id):
+        character = self.get_character(user_id)
+        if not character:
+            raise ValueError("Character not found")
         
-        # Select random missions
-        selected_missions = random.sample(available_missions, min(count, len(available_missions)))
+        # Clear completed missions
+        character.active_missions = [m for m in character.active_missions if not m.is_completed]
         
-        # Start the missions
-        for mission in selected_missions:
-            mission_copy = Mission(
-                mission_id=mission.mission_id,
-                title=mission.title,
-                description=mission.description,
-                mission_type=mission.mission_type,
-                reward_coins=mission.reward_coins,
-                reward_exp=mission.reward_exp,
-                requirements=mission.requirements.copy(),
-                duration_days=mission.duration_days
+        # Assign new missions based on character level
+        new_missions = []
+        for template in self.mission_templates:
+            if len(character.active_missions) < 3:  # Maximum 3 active missions
+                new_mission = Mission(
+                    template.title,
+                    template.description,
+                    template.mission_type,
+                    template.reward_coins,
+                    template.reward_exp
+                )
+                new_missions.append(new_mission)
+                character.active_missions.append(new_mission)
+        
+        return new_missions
+    
+    def assign_challenge(self, user_id):
+        character = self.get_character(user_id)
+        if not character:
+            raise ValueError("Character not found")
+        
+        # Clear completed challenges
+        character.active_challenges = [c for c in character.active_challenges if not c.is_completed]
+        
+        # Assign new challenge if none active
+        if not character.active_challenges:
+            template = random.choice(self.challenge_templates)
+            new_challenge = Challenge(
+                template.title,
+                template.description,
+                template.challenge_type,
+                template.difficulty,
+                template.reward_coins,
+                template.reward_exp
             )
-            mission_copy.start()
-            self.active_missions[user_id].append(mission_copy)
-            
-        return selected_missions
+            character.active_challenges.append(new_challenge)
+            return new_challenge
+        
+        return None
     
     def get_active_missions(self, user_id):
-        """Get a user's active missions"""
-        return self.active_missions.get(user_id, [])
-    
-    def assign_challenge(self, user_id, challenge_id=None):
-        """Assign a challenge to a user"""
-        if user_id not in self.active_challenges:
-            self.active_challenges[user_id] = []
-            
-        # Find the challenge template
-        challenge_template = None
-        if challenge_id:
-            challenge_template = next(
-                (c for c in self.challenge_templates if c.challenge_id == challenge_id), 
-                None
-            )
-        else:
-            # Select a random challenge that's not already active
-            available_challenges = [
-                c for c in self.challenge_templates
-                if c.challenge_id not in [ch.challenge_id for ch in self.active_challenges[user_id]]
-            ]
-            if available_challenges:
-                challenge_template = random.choice(available_challenges)
-                
-        if not challenge_template:
-            return None
-            
-        # Create a new challenge instance
-        challenge = Challenge(
-            challenge_id=challenge_template.challenge_id,
-            title=challenge_template.title,
-            description=challenge_template.description,
-            challenge_type=challenge_template.challenge_type,
-            reward_coins=challenge_template.reward_coins,
-            reward_exp=challenge_template.reward_exp,
-            requirements=challenge_template.requirements.copy(),
-            duration_days=challenge_template.duration_days,
-            difficulty=challenge_template.difficulty
-        )
-        challenge.start()
-        self.active_challenges[user_id].append(challenge)
-        
-        return challenge
+        character = self.get_character(user_id)
+        if not character:
+            raise ValueError("Character not found")
+        return character.active_missions
     
     def get_active_challenges(self, user_id):
-        """Get a user's active challenges"""
-        return self.active_challenges.get(user_id, [])
-    
-    def update_user_progress(self, user_id, user_data):
-        """Update progress for missions and challenges based on user data"""
-        results = {
-            "missions_completed": [],
-            "challenges_completed": [],
-            "rewards_earned": {
-                "coins": 0,
-                "experience": 0
-            }
-        }
-        
-        # Update character
         character = self.get_character(user_id)
         if not character:
-            return results
-            
-        # Update login streak
-        character.update_streak()
-        
-        # Check missions
-        if user_id in self.active_missions:
-            for mission in self.active_missions[user_id]:
-                if not mission.is_completed and mission.check_completion(user_data):
-                    results["missions_completed"].append(mission.mission_id)
-                    results["rewards_earned"]["coins"] += mission.reward_coins
-                    results["rewards_earned"]["experience"] += mission.reward_exp
-                    
-                    # Grant rewards to character
-                    character.add_coins(mission.reward_coins)
-                    character.add_experience(mission.reward_exp)
-        
-        # Check challenges
-        if user_id in self.active_challenges:
-            for challenge in self.active_challenges[user_id]:
-                if not challenge.is_completed:
-                    old_progress = challenge.progress
-                    new_progress = challenge.update_progress(user_data)
-                    
-                    if challenge.is_completed:
-                        results["challenges_completed"].append(challenge.challenge_id)
-                        results["rewards_earned"]["coins"] += challenge.reward_coins
-                        results["rewards_earned"]["experience"] += challenge.reward_exp
-                        
-                        # Grant rewards to character
-                        character.add_coins(challenge.reward_coins)
-                        character.add_experience(challenge.reward_exp)
-        
-        return results
+            raise ValueError("Character not found")
+        return character.active_challenges
     
     def purchase_item(self, user_id, item_type, item_id, cost):
-        """Purchase an item for the character"""
         character = self.get_character(user_id)
         if not character:
-            return False
-            
-        if character.spend_coins(cost):
-            character.add_to_inventory(item_type, item_id)
-            return True
-        return False
-    
-    def save_state(self, file_path):
-        """Save the gamification system state to a file"""
-        state = {
-            "characters": {user_id: char.to_dict() for user_id, char in self.characters.items()},
-            "active_missions": {
-                user_id: [mission.to_dict() for mission in missions]
-                for user_id, missions in self.active_missions.items()
-            },
-            "active_challenges": {
-                user_id: [challenge.to_dict() for challenge in challenges]
-                for user_id, challenges in self.active_challenges.items()
-            }
-        }
+            raise ValueError("Character not found")
         
-        with open(file_path, 'w') as f:
+        if character.coins < cost:
+            return False
+        
+        character.coins -= cost
+        character.inventory.append({"type": item_type, "id": item_id})
+        return True
+    
+    def save_state(self, filename):
+        state = {
+            'characters': {user_id: char.to_dict() for user_id, char in self.characters.items()}
+        }
+        with open(filename, 'w') as f:
             json.dump(state, f, indent=2)
     
-    def load_state(self, file_path):
-        """Load the gamification system state from a file"""
+    def load_state(self, filename):
         try:
-            with open(file_path, 'r') as f:
+            with open(filename, 'r') as f:
                 state = json.load(f)
-                
-            # Load characters
-            self.characters = {
-                user_id: Character.from_dict(char_data)
-                for user_id, char_data in state.get("characters", {}).items()
-            }
-            
-            # Load missions
-            self.active_missions = {
-                user_id: [Mission.from_dict(mission_data) for mission_data in missions]
-                for user_id, missions in state.get("active_missions", {}).items()
-            }
-            
-            # Load challenges
-            self.active_challenges = {
-                user_id: [Challenge.from_dict(challenge_data) for challenge_data in challenges]
-                for user_id, challenges in state.get("active_challenges", {}).items()
-            }
-        except (FileNotFoundError, json.JSONDecodeError):
-            # If file doesn't exist or is invalid, start with empty state
-            self.characters = {}
-            self.active_missions = {}
-            self.active_challenges = {}
+                self.characters = {
+                    user_id: Character.from_dict(char_data)
+                    for user_id, char_data in state['characters'].items()
+                }
+        except FileNotFoundError:
+            pass  # Start with empty state if file doesn't exist
 
 
 # Example usage
@@ -701,7 +307,7 @@ if __name__ == "__main__":
     )
     
     # Assign missions
-    missions = gamification.assign_missions(user_id, count=3)
+    missions = gamification.assign_missions(user_id)
     print("Assigned {} missions to user {}".format(len(missions), user_id))
     
     # Assign a challenge

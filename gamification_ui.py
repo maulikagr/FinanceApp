@@ -60,7 +60,7 @@ class GamificationUI:
         ttk.Label(create_frame, text="Character Class:").grid(row=2, column=0, padx=5, pady=5)
         self.character_class_var = tk.StringVar()
         self.character_class_combo = ttk.Combobox(create_frame, textvariable=self.character_class_var)
-        self.character_class_combo['values'] = [c.value for c in CharacterClass]
+        self.character_class_combo['values'] = [c.name for c in CharacterClass]
         self.character_class_combo.grid(row=2, column=1, padx=5, pady=5)
         
         ttk.Button(create_frame, text="Create Character", command=self.create_character).grid(row=3, column=0, columnspan=2, pady=10)
@@ -148,7 +148,7 @@ class GamificationUI:
     def create_character(self):
         user_id = self.user_id_entry.get()
         name = self.character_name_entry.get()
-        character_class = CharacterClass(self.character_class_var.get())
+        character_class = CharacterClass[self.character_class_var.get()]
         
         if not all([user_id, name, character_class]):
             messagebox.showerror("Error", "Please fill in all fields")
