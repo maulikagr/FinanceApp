@@ -8,7 +8,7 @@
       "experience": 5,
       "coins": 10,
       "streak": 0,
-      "last_login": "2025-04-05T12:48:57.943737",
+      "last_login": "2025-04-05T13:43:23.802219",
       "inventory": {
         "outfits": [],
         "accessories": [],
@@ -21,17 +21,32 @@
   "active_missions": {
     "user123": [
       {
-        "mission_id": "budget_stick",
-        "title": "Budget Master",
-        "description": "Stay under budget in all categories this month",
+        "mission_id": "save_target",
+        "title": "Savings Goal",
+        "description": "Reach your monthly savings target",
         "mission_type": "Monthly",
-        "reward_coins": 300,
-        "reward_exp": 150,
+        "reward_coins": 200,
+        "reward_exp": 100,
         "requirements": {
-          "budget_categories_under": 5
+          "savings_target_reached": 1
         },
         "duration_days": 1,
-        "start_date": "2025-04-05T12:48:57.943755",
+        "start_date": "2025-04-05T13:43:23.802242",
+        "completion_date": null,
+        "is_completed": false
+      },
+      {
+        "mission_id": "cook_meals",
+        "title": "Home Chef",
+        "description": "Cook 3 meals at home this week",
+        "mission_type": "Weekly",
+        "reward_coins": 50,
+        "reward_exp": 25,
+        "requirements": {
+          "cooked_meals": 3
+        },
+        "duration_days": 1,
+        "start_date": "2025-04-05T13:43:23.802245",
         "completion_date": null,
         "is_completed": false
       },
@@ -46,45 +61,30 @@
           "login": 1
         },
         "duration_days": 1,
-        "start_date": "2025-04-05T12:48:57.943757",
-        "completion_date": "2025-04-05T12:48:57.943805",
+        "start_date": "2025-04-05T13:43:23.802246",
+        "completion_date": "2025-04-05T13:43:23.802284",
         "is_completed": true
-      },
-      {
-        "mission_id": "save_target",
-        "title": "Savings Goal",
-        "description": "Reach your monthly savings target",
-        "mission_type": "Monthly",
-        "reward_coins": 200,
-        "reward_exp": 100,
-        "requirements": {
-          "savings_target_reached": 1
-        },
-        "duration_days": 1,
-        "start_date": "2025-04-05T12:48:57.943758",
-        "completion_date": null,
-        "is_completed": false
       }
     ]
   },
   "active_challenges": {
     "user123": [
       {
-        "challenge_id": "double_savings",
-        "title": "Double Savings",
-        "description": "Double your usual savings amount for a month",
-        "challenge_type": "Saving",
-        "reward_coins": 500,
-        "reward_exp": 250,
+        "challenge_id": "investment_starter",
+        "title": "Investment Starter",
+        "description": "Make your first investment",
+        "challenge_type": "Investing",
+        "reward_coins": 200,
+        "reward_exp": 100,
         "requirements": {
-          "savings_multiplier": 2
+          "investments_made": 1
         },
-        "duration_days": 30,
-        "difficulty": "Hard",
-        "start_date": "2025-04-05T12:48:57.943787",
-        "end_date": "2025-05-05T12:48:57.943787",
+        "duration_days": 14,
+        "difficulty": "Easy",
+        "start_date": "2025-04-05T13:43:23.802269",
+        "end_date": "2025-04-19T13:43:23.802269",
         "is_completed": false,
-        "progress": 75.0
+        "progress": 0.0
       }
     ]
   }
