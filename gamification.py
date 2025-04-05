@@ -2,7 +2,6 @@ import random
 import json
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import List, Dict, Optional, Union, Any
 
 
 class CharacterLevel(Enum):
@@ -43,7 +42,7 @@ class ChallengeType(Enum):
 class Character:
     """Represents a user's customizable avatar character"""
     
-    def __init__(self, user_id: str, name: str, character_class: CharacterClass):
+    def __init__(self, user_id, name, character_class):
         self.user_id = user_id
         self.name = name
         self.character_class = character_class
@@ -60,12 +59,12 @@ class Character:
         self.unlocked_features = []
         self.achievements = []
         
-    def add_experience(self, amount: int) -> bool:
+    def add_experience(self, amount):
         """Add experience points and check for level up"""
         self.experience += amount
         return self._check_level_up()
     
-    def _check_level_up(self) -> bool:
+    def _check_level_up(self):
         """Check if character should level up based on experience"""
         level_thresholds = {
             CharacterLevel.NOVICE: 100,
@@ -110,11 +109,11 @@ class Character:
         if self.level in feature_unlocks:
             self.unlocked_features.extend(feature_unlocks[self.level])
     
-    def add_coins(self, amount: int):
+    def add_coins(self, amount):
         """Add coins to the character's balance"""
         self.coins += amount
     
-    def spend_coins(self, amount: int) -> bool:
+    def spend_coins(self, amount):
         """Spend coins if enough are available"""
         if self.coins >= amount:
             self.coins -= amount
@@ -136,17 +135,17 @@ class Character:
             
         self.last_login = datetime.now()
     
-    def add_to_inventory(self, item_type: str, item_id: str):
+    def add_to_inventory(self, item_type, item_id):
         """Add an item to the character's inventory"""
         if item_type in self.inventory:
             self.inventory[item_type].append(item_id)
     
-    def add_achievement(self, achievement_id: str):
+    def add_achievement(self, achievement_id):
         """Add an achievement to the character's list"""
         if achievement_id not in self.achievements:
             self.achievements.append(achievement_id)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self):
         """Convert character to dictionary for storage"""
         return {
             "user_id": self.user_id,
@@ -163,7 +162,7 @@ class Character:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Character':
+    def from_dict(cls, data):
         """Create a character from a dictionary"""
         character = cls(
             user_id=data["user_id"],
@@ -186,14 +185,14 @@ class Mission:
     
     def __init__(
         self, 
-        mission_id: str, 
-        title: str, 
-        description: str, 
-        mission_type: MissionType,
-        reward_coins: int,
-        reward_exp: int,
-        requirements: Dict[str, Any],
-        duration_days: int = 1
+        mission_id,
+        title,
+        description,
+        mission_type,
+        reward_coins,
+        reward_exp,
+        requirements,
+        duration_days=1
     ):
         self.mission_id = mission_id
         self.title = title
@@ -212,7 +211,7 @@ class Mission:
         self.start_date = datetime.now()
         self.is_completed = False
     
-    def check_completion(self, user_data: Dict[str, Any]) -> bool:
+    def check_completion(self, user_data):
         """Check if the mission is completed based on user data"""
         if self.is_completed:
             return True
@@ -226,7 +225,7 @@ class Mission:
         self.is_completed = True
         return True
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self):
         """Convert mission to dictionary for storage"""
         return {
             "mission_id": self.mission_id,
@@ -243,7 +242,7 @@ class Mission:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Mission':
+    def from_dict(cls, data):
         """Create a mission from a dictionary"""
         mission = cls(
             mission_id=data["mission_id"],
@@ -270,15 +269,15 @@ class Challenge:
     
     def __init__(
         self, 
-        challenge_id: str, 
-        title: str, 
-        description: str, 
-        challenge_type: ChallengeType,
-        reward_coins: int,
-        reward_exp: int,
-        requirements: Dict[str, Any],
-        duration_days: int,
-        difficulty: str
+        challenge_id,
+        title,
+        description,
+        challenge_type,
+        reward_coins,
+        reward_exp,
+        requirements,
+        duration_days,
+        difficulty
     ):
         self.challenge_id = challenge_id
         self.title = title
@@ -301,7 +300,7 @@ class Challenge:
         self.is_completed = False
         self.progress = 0.0
     
-    def update_progress(self, user_data: Dict[str, Any]) -> float:
+    def update_progress(self, user_data):
         """Update the progress of the challenge based on user data"""
         if self.is_completed:
             return 100.0
@@ -322,13 +321,13 @@ class Challenge:
             
         return self.progress
     
-    def is_expired(self) -> bool:
+    def is_expired(self):
         """Check if the challenge has expired"""
         if not self.end_date:
             return False
         return datetime.now() > self.end_date
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self):
         """Convert challenge to dictionary for storage"""
         return {
             "challenge_id": self.challenge_id,
@@ -347,7 +346,7 @@ class Challenge:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Challenge':
+    def from_dict(cls, data):
         """Create a challenge from a dictionary"""
         challenge = cls(
             challenge_id=data["challenge_id"],
@@ -381,7 +380,7 @@ class GamificationSystem:
         self.mission_templates = self._load_mission_templates()
         self.challenge_templates = self._load_challenge_templates()
     
-    def _load_mission_templates(self) -> List[Mission]:
+    def _load_mission_templates(self):
         """Load predefined mission templates"""
         return [
             Mission(
@@ -431,7 +430,7 @@ class GamificationSystem:
             )
         ]
     
-    def _load_challenge_templates(self) -> List[Challenge]:
+    def _load_challenge_templates(self):
         """Load predefined challenge templates"""
         return [
             Challenge(
@@ -491,17 +490,17 @@ class GamificationSystem:
             )
         ]
     
-    def create_character(self, user_id: str, name: str, character_class: CharacterClass) -> Character:
+    def create_character(self, user_id, name, character_class):
         """Create a new character for a user"""
         character = Character(user_id, name, character_class)
         self.characters[user_id] = character
         return character
     
-    def get_character(self, user_id: str) -> Optional[Character]:
+    def get_character(self, user_id):
         """Get a user's character"""
         return self.characters.get(user_id)
     
-    def assign_missions(self, user_id: str, count: int = 3) -> List[Mission]:
+    def assign_missions(self, user_id, count=3):
         """Assign random missions to a user"""
         if user_id not in self.active_missions:
             self.active_missions[user_id] = []
@@ -532,11 +531,11 @@ class GamificationSystem:
             
         return selected_missions
     
-    def get_active_missions(self, user_id: str) -> List[Mission]:
+    def get_active_missions(self, user_id):
         """Get a user's active missions"""
         return self.active_missions.get(user_id, [])
     
-    def assign_challenge(self, user_id: str, challenge_id: Optional[str] = None) -> Optional[Challenge]:
+    def assign_challenge(self, user_id, challenge_id=None):
         """Assign a challenge to a user"""
         if user_id not in self.active_challenges:
             self.active_challenges[user_id] = []
@@ -545,7 +544,7 @@ class GamificationSystem:
         challenge_template = None
         if challenge_id:
             challenge_template = next(
-                (c for c in this.challenge_templates if c.challenge_id == challenge_id), 
+                (c for c in self.challenge_templates if c.challenge_id == challenge_id), 
                 None
             )
         else:
@@ -577,11 +576,11 @@ class GamificationSystem:
         
         return challenge
     
-    def get_active_challenges(self, user_id: str) -> List[Challenge]:
+    def get_active_challenges(self, user_id):
         """Get a user's active challenges"""
         return self.active_challenges.get(user_id, [])
     
-    def update_user_progress(self, user_id: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    def update_user_progress(self, user_id, user_data):
         """Update progress for missions and challenges based on user data"""
         results = {
             "missions_completed": [],
@@ -630,7 +629,7 @@ class GamificationSystem:
         
         return results
     
-    def purchase_item(self, user_id: str, item_type: str, item_id: str, cost: int) -> bool:
+    def purchase_item(self, user_id, item_type, item_id, cost):
         """Purchase an item for the character"""
         character = self.get_character(user_id)
         if not character:
@@ -641,7 +640,7 @@ class GamificationSystem:
             return True
         return False
     
-    def save_state(self, file_path: str):
+    def save_state(self, file_path):
         """Save the gamification system state to a file"""
         state = {
             "characters": {user_id: char.to_dict() for user_id, char in self.characters.items()},
@@ -658,7 +657,7 @@ class GamificationSystem:
         with open(file_path, 'w') as f:
             json.dump(state, f, indent=2)
     
-    def load_state(self, file_path: str):
+    def load_state(self, file_path):
         """Load the gamification system state from a file"""
         try:
             with open(file_path, 'r') as f:
@@ -703,11 +702,11 @@ if __name__ == "__main__":
     
     # Assign missions
     missions = gamification.assign_missions(user_id, count=3)
-    print(f"Assigned {len(missions)} missions to user {user_id}")
+    print("Assigned {} missions to user {}".format(len(missions), user_id))
     
     # Assign a challenge
     challenge = gamification.assign_challenge(user_id)
-    print(f"Assigned challenge: {challenge.title if challenge else 'None'}")
+    print("Assigned challenge: {}".format(challenge.title if challenge else 'None'))
     
     # Update progress with some user data
     user_data = {
@@ -724,7 +723,7 @@ if __name__ == "__main__":
     }
     
     results = gamification.update_user_progress(user_id, user_data)
-    print(f"Progress update results: {results}")
+    print("Progress update results: {}".format(results))
     
     # Save state
     gamification.save_state("gamification_state.json")
@@ -732,6 +731,6 @@ if __name__ == "__main__":
     # Load state
     gamification.load_state("gamification_state.json")
     
-    print(f"Character level: {character.level.name}")
-    print(f"Character coins: {character.coins}")
-    print(f"Character experience: {character.experience}")
+    print("Character level: {}".format(character.level.name))
+    print("Character coins: {}".format(character.coins))
+    print("Character experience: {}".format(character.experience))
