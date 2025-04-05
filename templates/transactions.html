@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction History</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .transaction {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .date {
+            color: #666;
+        }
+        .amount {
+            font-weight: bold;
+            color: #2d7af6;
+        }
+        .category {
+            color: #666;
+            font-style: italic;
+        }
+        .back-button {
+            display: inline-block;
+            background-color: #2d7af6;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .back-button:hover {
+            background-color: #1b5fd9;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-button">← Back to Home</a>
+    <h1>Transaction History</h1>
+    
+    {% if transactions %}
+        {% for transaction in transactions %}
+            <div class="transaction">
+                <div class="transaction-header">
+                    <span class="date">{{ transaction.date }}</span>
+                    <span class="amount">${{ "%.2f"|format(transaction.amount) }}</span>
+                </div>
+                <div class="name">{{ transaction.name }}</div>
+                {% if transaction.category %}
+                    <div class="category">{{ transaction.category|join(', ') }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center;">No transactions found for the selected period.</p>
+    {% endif %}
+</body>
+</html> 

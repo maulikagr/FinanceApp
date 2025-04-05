@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Connection</title>
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #2d7af6;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        button:hover {
+            background-color: #1b5fd9;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #e7f5e7;
+            color: #0f5132;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+    </style>
+</head>
+<body>
+    <h1>Connect Your Bank Account</h1>
+    <p>Click the button below to securely connect your bank account and view your transactions.</p>
+    <button id="link-button">Connect Bank Account</button>
+    <div id="status"></div>
+
+    <script>
+        const linkToken = '{{ link_token }}';
+        
+        const handler = Plaid.create({
+            token: linkToken,
+            onSuccess: async (public_token, metadata) => {
+                try {
+                    const response = await fetch('/exchange_public_token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ public_token: public_token }),
+                    });
+                    
+                    const data = await response.json();
+                    const statusDiv = document.getElementById('status');
+                    statusDiv.style.display = 'block';
+                    
+                    if (data.status === 'success') {
+                        statusDiv.className = 'success';
+                        statusDiv.textContent = 'Successfully connected bank account! Redirecting...';
+                        setTimeout(() => {
+                            window.location.href = '/transactions';
+                        }, 1500);
+                    } else {
+                        statusDiv.className = 'error';
+                        statusDiv.textContent = 'Error: ' + data.message;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    const statusDiv = document.getElementById('status');
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'error';
+                    statusDiv.textContent = 'Error connecting to bank account';
+                }
+            },
+            onExit: (err, metadata) => {
+                if (err != null) {
+                    const statusDiv = document.getElementById('status');
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'error';
+                    statusDiv.textContent = 'Error: ' + err.message;
+                }
+            },
+        });
+
+        document.getElementById('link-button').onclick = () => {
+            handler.open();
+        };
+    </script>
+</body>
+</html> 
