@@ -25,6 +25,8 @@ def exchange_public_token():
 
 @app.route('/transactions')
 def show_transactions():
+    
+
     access_token = session.get('access_token')
     if not access_token:
         return render_template('error.html', message='No bank account connected')
@@ -34,6 +36,9 @@ def show_transactions():
     start_date = end_date - timedelta(days=30)
     transactions = plaid_client.get_transactions(access_token, start_date, end_date)
     
+    transactiondatabase = open("transactiondatabase.txt", "w")
+    transactiondatabase.write(str(transactions))
+
     return render_template('transactions.html', transactions=transactions)
 
 if __name__ == '__main__':
