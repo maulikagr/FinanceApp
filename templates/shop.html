@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Shop - AI Finance App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>Shop</h4>
+                <div>
+                    <span class="badge bg-warning text-dark me-2">{{ character.coins }} coins</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3" id="shopTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="outfits-tab" data-bs-toggle="tab" data-bs-target="#outfits" type="button" role="tab">Outfits</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="accessories-tab" data-bs-toggle="tab" data-bs-target="#accessories" type="button" role="tab">Accessories</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pets-tab" data-bs-toggle="tab" data-bs-target="#pets" type="button" role="tab">Pets</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="shopTabsContent">
+                    <!-- Outfits Tab -->
+                    <div class="tab-pane fade show active" id="outfits" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="shop-item">
+                                    <h5>Basic Outfit</h5>
+                                    <p>A simple outfit for your character.</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning text-dark">50 coins</span>
+                                        <button class="btn btn-sm btn-outline-primary purchase-btn" 
+                                                data-item-type="outfits" 
+                                                data-item-id="basic_outfit" 
+                                                data-cost="50">
+                                            Purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="shop-item">
+                                    <h5>Premium Outfit</h5>
+                                    <p>A stylish premium outfit for your character.</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning text-dark">100 coins</span>
+                                        <button class="btn btn-sm btn-outline-primary purchase-btn" 
+                                                data-item-type="outfits" 
+                                                data-item-id="premium_outfit" 
+                                                data-cost="100">
+                                            Purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="shop-item">
+                                    <h5>Rare Outfit</h5>
+                                    <p>A rare and exclusive outfit for your character.</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning text-dark">200 coins</span>
+                                        <button class="btn btn-sm btn-outline-primary purchase-btn" 
+                                                data-item-type="outfits" 
+                                                data-item-id="rare_outfit" 
+                                                data-cost="200">
+                                            Purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Accessories Tab -->
+                    <div class="tab-pane fade" id="accessories" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="shop-item">
+                                    <h5>Basic Hat</h5>
+                                    <p>A simple hat for your character.</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning text-dark">30 coins</span>
+                                        <button class="btn btn-sm btn-outline-primary purchase-btn" 
+                                                data-item-type="accessories" 
+                                                data-item-id="basic_hat" 
+                                                data-cost="30">
+                                            Purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="shop-item">
+                                    <h5>Special Glasses</h5>
+                                    <p>Stylish glasses for your character.</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning text-dark">75 coins</span>
+                                        <button class="btn btn-sm btn-outline-primary purchase-btn" 
+                                                data-item-type="accessories" 
+                                                data-item-id="special_glasses" 
+                                                data-cost="75">
+                                            Purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="shop-item">
+                                    <h5>Rare Accessory</h5>
+                                    <p>A rare and exclusive accessory for your character.</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning text-dark">150 coins</span>
+                                        <button class="btn btn-sm btn-outline-primary purchase-btn" 
+                                                data-item-type="accessories" 
+                                                data-item-id="rare_accessory" 
+                                                data-cost="150">
+                                            Purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pets Tab -->
+                    <div class="tab-pane fade" id="pets" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="shop-item">
+                                    <h5>Basic Pet</h5>
+                                    <p>A simple pet for your character.</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning text-dark">80 coins</span>
+                                        <button class="btn btn-sm btn-outline-primary purchase-btn" 
+                                                data-item-type="pets" 
+                                                data-item-id="basic_pet" 
+                                                data-cost="80">
+                                            Purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="shop-item">
+                                    <h5>Premium Pet</h5>
+                                    <p>A premium pet for your character.</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning text-dark">150 coins</span>
+                                        <button class="btn btn-sm btn-outline-primary purchase-btn" 
+                                                data-item-type="pets" 
+                                                data-item-id="premium_pet" 
+                                                data-cost="150">
+                                            Purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="shop-item">
+                                    <h5>Rare Pet</h5>
+                                    <p>A rare and exclusive pet for your character.</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-warning text-dark">300 coins</span>
+                                        <button class="btn btn-sm btn-outline-primary purchase-btn" 
+                                                data-item-type="pets" 
+                                                data-item-id="rare_pet" 
+                                                data-cost="300">
+                                            Purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const purchaseButtons = document.querySelectorAll('.purchase-btn');
+    
+    purchaseButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const itemType = this.getAttribute('data-item-type');
+            const itemId = this.getAttribute('data-item-id');
+            const cost = parseInt(this.getAttribute('data-cost'));
+            
+            fetch('/api/purchase_item', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    item_type: itemType,
+                    item_id: itemId,
+                    cost: cost
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Purchase successful!');
+                    location.reload();
+                } else {
+                    alert('Purchase failed. Not enough coins?');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred during purchase.');
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 
