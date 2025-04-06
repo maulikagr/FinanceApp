@@ -5,3 +5,8 @@ werkzeug==2.0.1
 python-dateutil>=2.8.2
 flask-login>=0.6.0
 flask-wtf>=1.0.0 
+flask==3.0.2
+plaid-python==14.0.0
+python-dotenv==1.0.1
+pymongo==4.6.1
+python-dateutil>=2.8.2 
