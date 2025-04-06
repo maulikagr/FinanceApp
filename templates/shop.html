@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Shop - Finance Gamification{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0"><i class="fas fa-store me-2"></i>Shop</h4>
+        <div class="user-coins">
+            <i class="fas fa-coins text-warning me-1"></i>
+            <span class="fw-bold">{{ character.coins }}</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for category, items in shop_items.items() %}
+                <div class="col-12 mb-4">
+                    <h5 class="mb-3">{{ category }}</h5>
+                    <div class="row">
+                        {% for item in items %}
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 shop-item-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ item.name }}</h5>
+                                        <p class="card-text">{{ item.description }}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-coins me-1"></i> {{ item.cost }}
+                                            </span>
+                                            {% if character.coins >= item.cost %}
+                                                <a href="{{ url_for('purchase', item_id=item.id) }}" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-shopping-cart me-1"></i> Purchase
+                                                </a>
+                                            {% else %}
+                                                <button class="btn btn-secondary btn-sm" disabled>
+                                                    <i class="fas fa-lock me-1"></i> Not enough coins
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>About the Shop</h4>
+    </div>
+    <div class="card-body">
+        <p>The shop is where you can spend your hard-earned coins to customize your character. You can purchase:</p>
+        <ul>
+            <li><strong>Outfits:</strong> Change your character's appearance</li>
+            <li><strong>Accessories:</strong> Add special items to your character</li>
+            <li><strong>Pets:</strong> Get a companion to follow you around</li>
+        </ul>
+        <p>Earn more coins by completing missions and challenges!</p>
+    </div>
+</div>
+{% endblock %} 

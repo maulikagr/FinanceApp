@@ -1,44 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
-        }
-        .error-message {
-            color: #842029;
-            background-color: #f8d7da;
-            border: 1px solid #f5c2c7;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .back-button {
-            display: inline-block;
-            background-color: #2d7af6;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-        .back-button:hover {
-            background-color: #1b5fd9;
-        }
-    </style>
-</head>
-<body>
-    <div class="error-message">
-        <h2>Error</h2>
-        <p>{{ message }}</p>
+{% extends "base.html" %}
+
+{% block title %}{{ error_title }} - Finance Gamification{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body text-center">
+        <h1 class="display-1 text-danger mb-4">
+            <i class="fas fa-exclamation-triangle"></i>
+        </h1>
+        <h2 class="mb-4">{{ error_title }}</h2>
+        <p class="lead mb-4">{{ error_message }}</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="fas fa-home me-2"></i>Return to Home
+        </a>
     </div>
-    <a href="/" class="back-button">← Back to Home</a>
-</body>
-</html> 
+</div>
+{% endblock %} 

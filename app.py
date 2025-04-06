@@ -19,9 +19,16 @@ app.jinja_env.filters['abs'] = abs
 plaid_link = PlaidLinkSetup()
 plaid_client = PlaidClient()
 
-# Configure Gemini
-genai.configure(api_key='AIzaSyAZgjfdVJ2N3L0ET5u9DcNgZq4f2_klKQI')
-model = genai.GenerativeModel('gemini-1.5-pro')
+# Initialize database
+def init_db():
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  email TEXT UNIQUE NOT NULL,
+                  password TEXT NOT NULL)''')
+    conn.commit()
+    conn.close()
 
 # MongoDB Atlas connection
 client = MongoClient(os.getenv('MONGODB_URI'), 
@@ -300,7 +307,11 @@ def login():
         email = request.form['email']
         password = request.form['password']
         
-        user = users.find_one({'email': email})
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        c.execute('SELECT id, password FROM users WHERE email = ?', (email,))
+        user = c.fetchone()
+        conn.close()
         
         if user and check_password_hash(user['password'], password):
             user_id = str(user['_id'])
@@ -329,7 +340,17 @@ def create_account():
     if password != confirm_password:
         return render_template('login.html', error='Passwords do not match')
     
-    if users.find_one({'email': email}):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    
+    try:
+        c.execute('INSERT INTO users (email, password) VALUES (?, ?)',
+                 (email, generate_password_hash(password)))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('login'))
+    except sqlite3.IntegrityError:
+        conn.close()
         return render_template('login.html', error='Email already exists')
     
     # Create user in authentication database
