@@ -38,7 +38,7 @@ def analyze_transactions(transactions):
     
     # Analyze transaction patterns
     for t in transactions:
-        category = t['category'][0] if t['category'] else 'Uncategorized'
+        category = t['category'][0] if t.get('category') and len(t['category']) > 0 else 'Uncategorized'
         amount = abs(t['amount'])
         
         # Track category totals and counts
