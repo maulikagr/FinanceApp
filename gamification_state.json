@@ -26,7 +26,7 @@
       "experience_to_next_level": 100,
       "coins": 5,
       "streak": 1,
-      "last_login": "2025-04-06T05:01:11.817231",
+      "last_login": "2025-04-06T09:25:23.275559",
       "inventory": {
         "outfits": [],
         "accessories": [],
@@ -68,6 +68,51 @@
           },
           "reward_exp": 5,
           "reward_coins": 5
+        }
+      ]
+    },
+    "67f2ab21ad2c1399ba1a8f79": {
+      "user_id": "67f2ab21ad2c1399ba1a8f79",
+      "name": "Piggy",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 0,
+      "experience_to_next_level": 100,
+      "coins": 0,
+      "streak": 1,
+      "last_login": "2025-04-06T09:26:13.331708",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": [
+        {
+          "title": "Daily Login",
+          "description": "Log in to the app",
+          "mission_type": "Daily",
+          "reward_coins": 10,
+          "reward_exp": 5,
+          "is_completed": false,
+          "start_date": "2025-04-06T09:26:09.153281"
+        },
+        {
+          "title": "Save $10",
+          "description": "Save $10 today",
+          "mission_type": "Daily",
+          "reward_coins": 20,
+          "reward_exp": 10,
+          "is_completed": false,
+          "start_date": "2025-04-06T09:26:09.153287"
+        },
+        {
+          "title": "Weekly Budget Review",
+          "description": "Review your weekly budget",
+          "mission_type": "Weekly",
+          "reward_coins": 50,
+          "reward_exp": 25,
+          "is_completed": false,
+          "start_date": "2025-04-06T09:26:09.153289"
         }
       ]
     }
