@@ -7,20 +7,24 @@ from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUse
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
 from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
+import certifi
 
 class PlaidLinkSetup:
     def __init__(self):
         load_dotenv()
         
         configuration = plaid.Configuration(
-            host=plaid.Environment.Sandbox if os.getenv('PLAID_ENV') == 'sandbox' else plaid.Environment.Development,
+            host=plaid.Environment.Sandbox if os.getenv('PLAID_ENV') == 'sandbox' else plaid.Environment.Production,
             api_key={
                 'clientId': os.getenv('PLAID_CLIENT_ID'),
                 'secret': os.getenv('PLAID_SECRET'),
             }
         )
         
-        self.client = plaid_api.PlaidApi(plaid.ApiClient(configuration))
+        api_client = plaid.ApiClient(configuration)
+        api_client.rest_client.pool_manager.connection_pool_kw['cert_reqs'] = 'CERT_REQUIRED'
+        api_client.rest_client.pool_manager.connection_pool_kw['ca_certs'] = certifi.where()
+        self.client = plaid_api.PlaidApi(api_client)
     
     def create_link_token(self, user_id=None):
         try:

@@ -5,7 +5,10 @@ import os
 from datetime import timedelta, date
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
-# import google.generativeai as genai
+from bson.objectid import ObjectId
+import google.generativeai as genai
+import json
+import certifi
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Required for session management
@@ -17,10 +20,12 @@ plaid_client = PlaidClient()
 # model = genai.GenerativeModel('gemini-1.5-pro')
 
 # MongoDB Atlas connection
-client = MongoClient(os.getenv('MONGODB_URI'))
-db = client.finance_app
-users = db.users
-user_data = db.userData  # New collection for user financial data
+client = MongoClient(os.getenv('MONGODB_URI'), 
+                    tls=True,
+                    tlsAllowInvalidCertificates=False,
+                    tlsCAFile=certifi.where())
+db = client['finance_app']
+users = db['users']
 
 def analyze_transactions(transactions):
     # Convert transactions to a format Gemini can understand
