@@ -26,6 +26,7 @@ client = MongoClient(os.getenv('MONGODB_URI'),
                     tlsCAFile=certifi.where())
 db = client['finance_app']
 users = db['users']
+user_data = db['userData']  # Collection for user financial data
 
 def analyze_transactions(transactions):
     # Convert transactions to a format Gemini can understand
