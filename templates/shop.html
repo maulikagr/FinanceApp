@@ -9,9 +9,9 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
+            <div class="card" style="background-color: white;">
                 <div class="card-body text-center">
-                    <h4>Your Coins: <span id="coin-balance">{{ character.coins }}</span></h4>
+                    <h4 style="color: var(--pink-highlight);">Your Coins: <span id="coin-balance">{{ character.coins }}</span></h4>
                 </div>
             </div>
         </div>
@@ -20,23 +20,23 @@
     {% for category, items in shop_items.items() %}
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">{{ category }}</h5>
+            <div class="card" style="background-color: white;">
+                <div class="card-header" style="background-color: var(--pink-highlight); color: white;">
+                    <h5 class="mb-0" style="color: white;">{{ category }}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         {% for item in items %}
                         <div class="col-md-4 mb-3">
-                            <div class="card h-100">
+                            <div class="card h-100" style="background-color: white;">
                                 <div class="card-body text-center">
                                     <img src="{{ url_for('static', filename='images/' + item.image) if item.image else '' }}" 
                                          class="img-fluid mb-3" 
                                          alt="{{ item.name }}"
                                          style="max-height: 150px;">
-                                    <h5>{{ item.name }}</h5>
+                                    <h5 style="color: var(--pink-highlight);">{{ item.name }}</h5>
                                     <p class="text-muted">{{ item.description }}</p>
-                                    <p class="fw-bold">Cost: {{ item.cost }} coins</p>
+                                    <p class="fw-bold" style="color: var(--pink-highlight);">Cost: {{ item.cost }} coins</p>
                                     <button class="btn {% if item.id in character.inventory %}btn-success{% else %}btn-primary{% endif %} purchase-btn" 
                                             data-item-id="{{ item.id }}"
                                             {% if item.id in character.inventory %}disabled{% endif %}>

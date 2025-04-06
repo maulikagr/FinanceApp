@@ -35,9 +35,9 @@ user_data = db['userData']  # Store user financial data
 # Shop items
 shop_items = {
     'Backgrounds': [
-        {'id': 'forest_bg', 'name': 'Forest Background', 'description': 'A peaceful forest scene', 'cost': 1, 'image': 'forest_bg.jpeg'},
-        {'id': 'desert_bg', 'name': 'Desert Background', 'description': 'A vast desert landscape', 'cost': 2, 'image': 'desert_bg.jpeg'},
-        {'id': 'money_bg', 'name': 'Money Background', 'description': 'A background filled with coins', 'cost': 5, 'image': 'money_bg.jpeg'},
+        {'id': 'forest_bg', 'name': 'Forest Background', 'description': 'A peaceful forest scene', 'cost': 5, 'image': 'forest_bg.jpeg'},
+        {'id': 'desert_bg', 'name': 'Money Background', 'description': 'A vast desert landscape', 'cost': 5, 'image': 'desert_bg.jpeg'},
+        {'id': 'money_bg', 'name': 'Desert Background', 'description': 'A background filled with coins', 'cost': 5, 'image': 'money_bg.jpeg'},
     ],
     'Outfits': [
         {'id': 'outfit1', 'name': 'Business Suit', 'description': 'A professional business suit', 'cost': 100},
@@ -721,88 +721,103 @@ def complete_quest():
     if 'user_id' not in session:
         return jsonify({"error": "Not logged in"}), 401
     
-    data = request.json
-    quest_id = data.get('quest_id')
-    
-    if not quest_id:
-        return jsonify({"error": "Quest ID is required"}), 400
-    
-    user_id = session['user_id']
-    character = gamification.get_character(user_id)
-    
-    if not character:
-        return jsonify({"error": "Character not found"}), 404
-    
-    # Find the quest in active missions
-    quest = None
-    for mission in character.active_missions:
-        # Handle both dictionary and Mission object cases
-        mission_id = mission.get('id') if isinstance(mission, dict) else str(mission.id)
-        if mission_id == quest_id:
-            quest = mission
-            break
-    
-    if not quest:
-        return jsonify({"error": "Quest not found"}), 404
-    
-    # Handle both dictionary and Mission object cases
-    is_completed = quest.get('is_completed', False) if isinstance(quest, dict) else quest.is_completed
-    if is_completed:
-        return jsonify({"error": "Quest already completed"}), 400
-    
-    # Get the quest description
-    description = quest.get('description') if isinstance(quest, dict) else quest.description
-    
-    # Extract the savings amount from the description
-    import re
-    savings_match = re.search(r'\$(\d+(?:\.\d{2})?)', description)
-    if savings_match:
-        savings_amount = float(savings_match.group(1))
-    else:
-        # If no dollar amount found, use a default value
-        savings_amount = 5.0
-    
-    # Mark quest as completed
-    if isinstance(quest, dict):
-        quest['is_completed'] = True
-        quest['progress'] = 100
-        reward_coins = quest.get('reward_coins', 5)
-    else:
-        quest.is_completed = True
-        quest.progress = 100
-        reward_coins = quest.reward_coins
-    
-    # Award coins
-    character.coins += reward_coins
-    
-    # Update user's financial data with the savings
-    user_financial_data = user_data.find_one({'user_id': user_id})
-    if user_financial_data:
-        # Split the savings between savings and emergency fund (70% savings, 30% emergency)
-        savings_portion = savings_amount * 0.5
-        emergency_portion = savings_amount * 0.5
+    try:
+        data = request.get_json()
+        if not data:
+            print("Error: No JSON data received")
+            return jsonify({"error": "Invalid request format"}), 400
+            
+        quest_id = data.get('quest_id')
+        print(f"Received quest_id: {quest_id}")
         
-        # Update the financial data
-        user_data.update_one(
-            {'user_id': user_id},
-            {
-                '$inc': {
-                    'current_savings': savings_portion,
-                    'emergency_fund': emergency_portion
+        if not quest_id:
+            print("Error: No quest_id provided")
+            return jsonify({"error": "Quest ID is required"}), 400
+        
+        user_id = session['user_id']
+        character = gamification.get_character(user_id)
+        
+        if not character:
+            print(f"Error: Character not found for user_id: {user_id}")
+            return jsonify({"error": "Character not found"}), 404
+        
+        # Find the quest in active missions
+        quest = None
+        for mission in character.active_missions:
+            # Handle both dictionary and Mission object cases
+            mission_id = mission.get('id') if isinstance(mission, dict) else str(mission.id)
+            print(f"Checking mission_id: {mission_id} against quest_id: {quest_id}")
+            if mission_id == quest_id:
+                quest = mission
+                break
+        
+        if not quest:
+            print(f"Error: Quest not found with id: {quest_id}")
+            return jsonify({"error": "Quest not found"}), 404
+        
+        # Handle both dictionary and Mission object cases
+        is_completed = quest.get('is_completed', False) if isinstance(quest, dict) else quest.is_completed
+        if is_completed:
+            print(f"Error: Quest already completed: {quest_id}")
+            return jsonify({"error": "Quest already completed"}), 400
+        
+        # Get the quest description
+        description = quest.get('description') if isinstance(quest, dict) else quest.description
+        
+        # Extract the savings amount from the description
+        import re
+        savings_match = re.search(r'\$(\d+(?:\.\d{2})?)', description)
+        if savings_match:
+            savings_amount = float(savings_match.group(1))
+        else:
+            # If no dollar amount found, use a default value
+            savings_amount = 5.0
+        
+        # Mark quest as completed
+        if isinstance(quest, dict):
+            quest['is_completed'] = True
+            quest['progress'] = 100
+            reward_coins = quest.get('reward_coins', 5)
+        else:
+            quest.is_completed = True
+            quest.progress = 100
+            reward_coins = quest.reward_coins
+        
+        # Award coins
+        character.coins += reward_coins
+        
+        # Update user's financial data with the savings
+        user_financial_data = user_data.find_one({'user_id': user_id})
+        if user_financial_data:
+            # Split the savings between savings and emergency fund (70% savings, 30% emergency)
+            savings_portion = savings_amount * 0.5
+            emergency_portion = savings_amount * 0.5
+            
+            # Update the financial data
+            user_data.update_one(
+                {'user_id': user_id},
+                {
+                    '$inc': {
+                        'current_savings': savings_portion,
+                        'emergency_fund': emergency_portion
+                    }
                 }
-            }
-        )
-    
-    # Save character state
-    gamification.save_state("gamification_state.json")
-    
-    return jsonify({
-        "status": "success",
-        "coins": character.coins,
-        "savings_added": savings_portion,
-        "emergency_added": emergency_portion,
-        "message": "Quest completed successfully!"
-    })
+            )
+        
+        # Save character state
+        gamification.save_state("gamification_state.json")
+        
+        return jsonify({
+            "status": "success",
+            "coins": character.coins,
+            "savings_added": savings_portion,
+            "emergency_added": emergency_portion,
+            "message": "Quest completed successfully!"
+        })
+        
+    except Exception as e:
+        print(f"Error completing quest: {str(e)}")
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 @app.route('/add_transaction', methods=['POST'])
 def add_transaction():

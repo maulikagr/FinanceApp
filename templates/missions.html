@@ -3,9 +3,9 @@
 {% block title %}Daily Quests - Finance Gamification{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h4 class="mb-0"><i class="fas fa-tasks me-2"></i>Your Daily Quests</h4>
+<div class="card" style="background-color: white;">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--pink-highlight); color: white;">
+        <h4 class="mb-0" style="color: white;"><i class="fas fa-tasks me-2"></i>Your Daily Quests</h4>
         <div class="text-warning">
             <i class="fas fa-coins me-1"></i> {{ character.coins if character else 0 }} Gold
         </div>
@@ -15,13 +15,13 @@
             {% if character.active_missions %}
                 {% for mission in character.active_missions %}
                     <div class="col-md-6 mb-4">
-                        <div class="card h-100 mission-card {% if mission.is_completed %}completed-quest{% endif %}">
+                        <div class="card h-100 mission-card {% if mission.is_completed %}completed-quest{% endif %}" style="background-color: white;">
                             <div class="card-body">
-                                <h5 class="card-title">{{ mission.title }}</h5>
+                                <h5 class="card-title" style="color: var(--pink-highlight);">{{ mission.title }}</h5>
                                 <p class="card-text">{{ mission.description }}</p>
                                 <div class="progress mb-3">
-                                    <div class="progress-bar bg-success" role="progressbar" 
-                                         style="width: {{ mission.progress }}%"
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ mission.progress }}%; background-color: var(--pink-highlight); color: white;"
                                          aria-valuenow="{{ mission.progress }}" 
                                          aria-valuemin="0" 
                                          aria-valuemax="100">
@@ -30,11 +30,11 @@
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <span class="badge bg-primary me-2">{{ mission.mission_type.name }}</span>
-                                        <span class="badge bg-warning">+{{ mission.reward_coins }} Gold</span>
+                                        <span class="badge" style="background-color: var(--pink-highlight)">{{ mission.mission_type.name }}</span>
+                                        <span class="badge" style="background-color: var(--pink-highlight)" class="ms-2">+{{ mission.reward_coins }} Gold</span>
                                     </div>
                                     {% if mission.is_completed %}
-                                        <span class="badge bg-success">Completed</span>
+                                        <span class="badge" style="background-color: var(--pink-highlight)">Completed</span>
                                     {% else %}
                                         <button class="btn btn-primary btn-sm complete-quest" 
                                                 data-quest-id="{{ mission.id }}"
@@ -49,7 +49,7 @@
                 {% endfor %}
             {% else %}
                 <div class="col-12">
-                    <div class="alert alert-info">
+                    <div class="alert" style="background-color: white; border-color: var(--pink-highlight); color: var(--text-color);">
                         <i class="fas fa-info-circle me-2"></i>No active quests. Check back later for new quests!
                     </div>
                 </div>
@@ -58,9 +58,9 @@
     </div>
 </div>
 
-<div class="card mt-4">
-    <div class="card-header">
-        <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>About Daily Quests</h4>
+<div class="card mt-4" style="background-color: white;">
+    <div class="card-header" style="background-color: var(--pink-highlight); color: white;">
+        <h4 class="mb-0" style="color: white;"><i class="fas fa-info-circle me-2"></i>About Daily Quests</h4>
     </div>
     <div class="card-body">
         <p>Daily quests are personalized tasks based on your financial habits and goals. Complete them to earn gold that you can spend in the shop!</p>
@@ -76,6 +76,22 @@
 
 .progress-bar {
     transition: width 0.5s ease;
+}
+
+.badge {
+    color: white;
+    padding: 0.5em 0.75em;
+    border-radius: 0.5rem;
+}
+
+.btn-primary {
+    background-color: var(--pink-highlight);
+    border-color: var(--pink-highlight);
+}
+
+.btn-primary:hover {
+    background-color: var(--darker-pink);
+    border-color: var(--darker-pink);
 }
 </style>
 

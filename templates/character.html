@@ -10,9 +10,9 @@
     <div class="row">
         <!-- Character Display -->
         <div class="col-md-6">
-            <div class="card mb-4" style="background-color: #FFD1DC;">
-                <div class="card-header">
-                    <h5 class="mb-0">Your Character</h5>
+            <div class="card mb-4" style="background-color: white;">
+                <div class="card-header" style="background-color: var(--pink-highlight); color: white;">
+                    <h5 class="mb-0" style="color: white;">Your Character</h5>
                 </div>
                 <div class="card-body text-center">
                     <div class="character-display mb-3" style="position: relative; min-height: 300px; overflow: hidden;">
@@ -23,7 +23,7 @@
                              style="position: relative; z-index: 2; max-height: 300px;">
                     </div>
                     
-                    <h4 class="character-name" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#nameChangeModal">
+                    <h4 class="character-name" style="cursor: pointer; color: var(--pink-highlight);" data-bs-toggle="modal" data-bs-target="#nameChangeModal">
                         {{ character.name }}
                         <i class="fas fa-edit ms-2"></i>
                     </h4>
@@ -33,7 +33,7 @@
                     <div class="progress mb-2">
                         <div class="progress-bar" 
                              role="progressbar" 
-                             style="width: {{ (character.experience / character.experience_to_next_level * 100) }}%"
+                             style="width: {{ (character.experience / character.experience_to_next_level * 100) }}%; background-color: var(--pink-highlight); color: white;"
                              aria-valuenow="{{ character.experience }}" 
                              aria-valuemin="0" 
                              aria-valuemax="{{ character.experience_to_next_level }}">
@@ -43,7 +43,7 @@
 
                     <!-- Background Selection -->
                     <div class="mt-4">
-                        <h5>Backgrounds</h5>
+                        <h5 style="color: var(--pink-highlight);">Backgrounds</h5>
                         <div class="row">
                             {% for bg in shop_items['Backgrounds'] %}
                             <div class="col-4 mb-3">
@@ -71,45 +71,45 @@
 
         <!-- Stats -->
         <div class="col-md-6">
-            <div class="card" style="background-color: #FFD1DC;">
-                <div class="card-header">
-                    <h5 class="mb-0">Stats</h5>
+            <div class="card" style="background-color: white;">
+                <div class="card-header" style="background-color: var(--pink-highlight); color: white;">
+                    <h5 class="mb-0" style="color: white;">Stats</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <div class="card h-100">
+                            <div class="card h-100" style="background-color: white;">
                                 <div class="card-body text-center">
                                     <i class="fas fa-coins text-warning fa-2x mb-2"></i>
-                                    <h6>Coins</h6>
-                                    <h4>{{ character.coins }}</h4>
+                                    <h6 style="color: var(--pink-highlight);">Coins</h6>
+                                    <h4 style="color: var(--pink-highlight);">{{ character.coins }}</h4>
                                 </div>
                             </div>
                         </div>
                         <div class="col-6 mb-3">
-                            <div class="card h-100">
+                            <div class="card h-100" style="background-color: white;">
                                 <div class="card-body text-center">
                                     <i class="fas fa-fire text-danger fa-2x mb-2"></i>
-                                    <h6>Streak</h6>
-                                    <h4>{{ character.streak }} Days</h4>
+                                    <h6 style="color: var(--pink-highlight);">Streak</h6>
+                                    <h4 style="color: var(--pink-highlight);">{{ character.streak }} Days</h4>
                                 </div>
                             </div>
                         </div>
                         <div class="col-6 mb-3">
-                            <div class="card h-100">
+                            <div class="card h-100" style="background-color: white;">
                                 <div class="card-body text-center">
                                     <i class="fas fa-trophy text-success fa-2x mb-2"></i>
-                                    <h6>Completed Quests</h6>
-                                    <h4>{{ character.completed_quests|length }}</h4>
+                                    <h6 style="color: var(--pink-highlight);">Completed Quests</h6>
+                                    <h4 style="color: var(--pink-highlight);">{{ character.completed_quests|length }}</h4>
                                 </div>
                             </div>
                         </div>
                         <div class="col-6 mb-3">
-                            <div class="card h-100">
+                            <div class="card h-100" style="background-color: white;">
                                 <div class="card-body text-center">
                                     <i class="fas fa-gift text-primary fa-2x mb-2"></i>
-                                    <h6>Items Owned</h6>
-                                    <h4>{{ character.inventory|length }}</h4>
+                                    <h6 style="color: var(--pink-highlight);">Items Owned</h6>
+                                    <h4 style="color: var(--pink-highlight);">{{ character.inventory|length }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -124,8 +124,8 @@
 <div class="modal fade" id="nameChangeModal" tabindex="-1" aria-labelledby="nameChangeModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="nameChangeModalLabel">Change Character Name</h5>
+            <div class="modal-header" style="background-color: var(--pink-highlight); color: white;">
+                <h5 class="modal-title" style="color: white;" id="nameChangeModalLabel">Change Character Name</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

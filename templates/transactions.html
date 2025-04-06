@@ -6,16 +6,16 @@
 <div class="row">
     <!-- Savings Goal Section -->
     <div class="col-12 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Set Your Savings Goal</h5>
+        <div class="card" style="background-color: white;">
+            <div class="card-header" style="background-color: var(--pink-highlight); color: white;">
+                <h5 class="mb-0" style="color: white;">Set Your Savings Goal</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body" style="color: var(--pink-highlight);">
                 <form method="POST" action="{{ url_for('show_transactions') }}">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="savings_goal" class="form-label">Monthly Savings Goal ($)</label>
+                                <label for="savings_goal" class="form-label" style="color: var(--pink-highlight);">Monthly Savings Goal ($)</label>
                                 <input type="number" class="form-control" id="savings_goal" name="savings_goal" 
                                        value="{{ savings_goal }}" min="0" step="0.01" required>
                             </div>
@@ -23,7 +23,7 @@
                         </div>
                         <div class="col-md-6">
                             {% if goals and goals.time_estimate %}
-                            <div class="alert alert-info">
+                            <div class="alert" style="background-color: #ffebf5 ; border-color: var(--pink-highlight); color: var(--pink-highlight);">
                                 <i class="fas fa-clock me-2"></i>{{ goals.time_estimate }}
                             </div>
                             {% endif %}
@@ -36,66 +36,68 @@
 
     <!-- Progress Sections -->
     <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Savings Progress</h5>
+        <div class="card" style="background-color: white;">
+            <div class="card-header" style="background-color: var(--pink-highlight); color: white;">
+                <h5 class="mb-0" style="color: white;">Savings Progress</h5>
             </div>
-            <div class="card-body">
-                <h3 class="text-success">${{ "%.2f"|format(current_savings) }}</h3>
+            <div class="card-body" style="color: var(--pink-highlight);">
+                <h3 style="color: var(--pink-highlight);">${{ "%.2f"|format(current_savings) }}</h3>
                 <div class="progress mb-2" style="height: 25px;">
-                    <div class="progress-bar bg-success" role="progressbar" 
-                         style="width: {{ savings_percentage }}%"
+                    <div class="progress-bar" role="progressbar" 
+                         data-width="{{ savings_percentage }}"
+                         style="background-color: var(--pink-highlight); color: white;"
                          aria-valuenow="{{ current_savings }}" 
                          aria-valuemin="0" 
                          aria-valuemax="{{ savings_goal }}">
                         {{ "%.1f"|format(savings_percentage) }}%
                     </div>
                 </div>
-                <p class="text-muted mb-0">Goal: ${{ "%.2f"|format(savings_goal) }}</p>
+                <p class="mb-0" style="color: var(--pink-highlight);">Goal: ${{ "%.2f"|format(savings_goal) }}</p>
             </div>
         </div>
     </div>
 
     <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0">Emergency Fund</h5>
+        <div class="card" style="background-color: white;">
+            <div class="card-header" style="background-color: var(--pink-highlight); color: white;">
+                <h5 class="mb-0" style="color: white;">Emergency Fund</h5>
             </div>
-            <div class="card-body">
-                <h3 class="text-warning">${{ "%.2f"|format(emergency_fund) }}</h3>
+            <div class="card-body" style="color: var(--pink-highlight);">
+                <h3 style="color: var(--pink-highlight);">${{ "%.2f"|format(emergency_fund) }}</h3>
                 <div class="progress mb-2" style="height: 25px;">
-                    <div class="progress-bar bg-warning" role="progressbar" 
-                         style="width: {{ emergency_percentage }}%"
+                    <div class="progress-bar" role="progressbar" 
+                         data-width="{{ emergency_percentage }}"
+                         style="background-color: var(--pink-highlight); color: white;"
                          aria-valuenow="{{ emergency_fund }}" 
                          aria-valuemin="0" 
                          aria-valuemax="{{ savings_goal * 0.5 }}">
                         {{ "%.1f"|format(emergency_percentage) }}%
                     </div>
                 </div>
-                <p class="text-muted mb-0">Target: ${{ "%.2f"|format(savings_goal * 0.5) }}</p>
+                <p class="mb-0" style="color: var(--pink-highlight);">Target: ${{ "%.2f"|format(savings_goal * 0.5) }}</p>
             </div>
         </div>
     </div>
 
     <!-- Transactions Section -->
     <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Recent Transactions</h5>
+        <div class="card" style="background-color: white;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--pink-highlight); color: white;">
+                <h5 class="mb-0" style="color: white;">Recent Transactions</h5>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newTransactionModal">
                     <i class="fas fa-plus me-1"></i>New Transaction
                 </button>
             </div>
-            <div class="card-body">
+            <div class="card-body" style="color: var(--pink-highlight);">
                 {% if transactions %}
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Description</th>
-                                <th>Category</th>
-                                <th class="text-end">Amount</th>
+                                <th style="color: white;">Date</th>
+                                <th style="color: white;">Description</th>
+                                <th style="color: white;">Category</th>
+                                <th class="text-end" style="color: white;">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -113,7 +115,7 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted">No transactions available. Connect your bank account to see your transactions.</p>
+                <p style="color: var(--pink-highlight);">No transactions available. Connect your bank account to see your transactions.</p>
                 {% endif %}
             </div>
         </div>
@@ -258,6 +260,10 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             alert('An error occurred while creating the transaction.');
         });
+    });
+
+    document.querySelectorAll('.progress-bar[data-width]').forEach(bar => {
+        bar.style.width = bar.dataset.width + '%';
     });
 });
 </script>
