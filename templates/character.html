@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}PiggyPal - Character{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Alert Container - Fixed at the top of the content -->
+    <div id="alert-container" class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1050;"></div>
+
+    <div class="row">
+        <!-- Character Display -->
+        <div class="col-md-6">
+            <div class="card mb-4" style="background-color: #FFD1DC;">
+                <div class="card-header">
+                    <h5 class="mb-0">Your Character</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="character-display mb-3" style="position: relative; min-height: 300px; overflow: hidden;">
+                        <div class="background-image" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
+                        <img src="{{ url_for('static', filename='maincharacter.png') }}" 
+                             alt="Character" 
+                             class="img-fluid character-image"
+                             style="position: relative; z-index: 2; max-height: 300px;">
+                    </div>
+                    
+                    <h4 class="character-name" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#nameChangeModal">
+                        {{ character.name }}
+                        <i class="fas fa-edit ms-2"></i>
+                    </h4>
+                    <p class="text-muted">Level {{ character.level }}</p>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress mb-2">
+                        <div class="progress-bar" 
+                             role="progressbar" 
+                             style="width: {{ (character.experience / character.experience_to_next_level * 100) }}%"
+                             aria-valuenow="{{ character.experience }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="{{ character.experience_to_next_level }}">
+                            {{ character.experience }}/{{ character.experience_to_next_level }} XP
+                        </div>
+                    </div>
+
+                    <!-- Background Selection -->
+                    <div class="mt-4">
+                        <h5>Backgrounds</h5>
+                        <div class="row">
+                            {% for bg in shop_items['Backgrounds'] %}
+                            <div class="col-4 mb-3">
+                                <div class="position-relative">
+                                    <img src="{{ url_for('static', filename='images/' + bg.image) }}" 
+                                         class="img-fluid rounded cursor-pointer background-option"
+                                         alt="{{ bg.name }}"
+                                         style="height: 100px; object-fit: cover;"
+                                         data-bg-id="{{ bg.id }}"
+                                         data-bg-url="{{ url_for('static', filename='images/' + bg.image) }}"
+                                         {% if bg.id not in character.inventory %}style="filter: grayscale(100%);"{% endif %}>
+                                    {% if bg.id not in character.inventory %}
+                                    <div class="position-absolute top-50 start-50 translate-middle">
+                                        <i class="fas fa-lock text-white fa-2x"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="col-md-6">
+            <div class="card" style="background-color: #FFD1DC;">
+                <div class="card-header">
+                    <h5 class="mb-0">Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-coins text-warning fa-2x mb-2"></i>
+                                    <h6>Coins</h6>
+                                    <h4>{{ character.coins }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-fire text-danger fa-2x mb-2"></i>
+                                    <h6>Streak</h6>
+                                    <h4>{{ character.streak }} Days</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-trophy text-success fa-2x mb-2"></i>
+                                    <h6>Completed Quests</h6>
+                                    <h4>{{ character.completed_quests|length }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-gift text-primary fa-2x mb-2"></i>
+                                    <h6>Items Owned</h6>
+                                    <h4>{{ character.inventory|length }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Name Change Modal -->
+<div class="modal fade" id="nameChangeModal" tabindex="-1" aria-labelledby="nameChangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="nameChangeModalLabel">Change Character Name</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="nameChangeForm">
+                    <div class="mb-3">
+                        <label for="newName" class="form-label">New Name</label>
+                        <input type="text" class="form-control" id="newName" value="{{ character.name }}" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveNameBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const alertContainer = document.getElementById('alert-container');
+    
+    // Handle name change
+    document.getElementById('saveNameBtn').addEventListener('click', function() {
+        const newName = document.getElementById('newName').value.trim();
+        
+        if (!newName) {
+            alert('Please enter a name');
+            return;
+        }
+        
+        fetch('/change_character_name', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ new_name: newName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update the displayed name
+                document.querySelector('.character-name').textContent = newName;
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('nameChangeModal'));
+                modal.hide();
+                
+                // Show success message in the alert container
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    Name changed successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                alertContainer.appendChild(alertDiv);
+                
+                // Remove alert after 3 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+            } else {
+                // Show error message in the alert container
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                alertContainer.appendChild(alertDiv);
+                
+                // Remove alert after 3 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                An error occurred while changing the name.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        });
+    });
+
+    // Handle background selection
+    document.querySelectorAll('.background-option').forEach(bg => {
+        bg.addEventListener('click', function() {
+            const bgId = this.dataset.bgId;
+            const bgUrl = this.dataset.bgUrl;
+            const isOwned = !this.style.filter || this.style.filter !== 'grayscale(100%)';
+            
+            if (!isOwned) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-warning alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    You need to purchase this background from the shop first!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                alertContainer.appendChild(alertDiv);
+                
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+                return;
+            }
+            
+            fetch('/change_background', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ background_id: bgId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update the background
+                    const backgroundDiv = document.querySelector('.background-image');
+                    backgroundDiv.style.backgroundImage = `url('${bgUrl}')`;
+                    backgroundDiv.style.backgroundSize = 'cover';
+                    backgroundDiv.style.backgroundPosition = 'center';
+                    
+                    // Show success message in the alert container
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        Background changed successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    alertContainer.appendChild(alertDiv);
+                    
+                    // Remove alert after 3 seconds
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 3000);
+                } else {
+                    // Show error message in the alert container
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    alertContainer.appendChild(alertDiv);
+                    
+                    // Remove alert after 3 seconds
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    An error occurred while changing the background.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                alertContainer.appendChild(alertDiv);
+                
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

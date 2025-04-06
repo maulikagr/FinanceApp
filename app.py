@@ -34,6 +34,11 @@ user_data = db['userData']  # Store user financial data
 
 # Shop items
 shop_items = {
+    'Backgrounds': [
+        {'id': 'forest_bg', 'name': 'Forest Background', 'description': 'A peaceful forest scene', 'cost': 1, 'image': 'forest_bg.jpeg'},
+        {'id': 'desert_bg', 'name': 'Desert Background', 'description': 'A vast desert landscape', 'cost': 2, 'image': 'desert_bg.jpeg'},
+        {'id': 'money_bg', 'name': 'Money Background', 'description': 'A background filled with coins', 'cost': 5, 'image': 'money_bg.jpeg'},
+    ],
     'Outfits': [
         {'id': 'outfit1', 'name': 'Business Suit', 'description': 'A professional business suit', 'cost': 100},
         {'id': 'outfit2', 'name': 'Casual Wear', 'description': 'Comfortable casual clothing', 'cost': 50},
@@ -410,7 +415,7 @@ def create_account():
         try:
             character = gamification.create_character(
                 user_id=user_id,
-                name=email.split('@')[0],  # Use email username as character name
+                name="Piggy",  # Set default name to Piggy
                 character_class=CharacterClass.SAVER
             )
             gamification.assign_missions(user_id)
@@ -514,13 +519,13 @@ def shop():
 @app.route('/purchase/<item_id>', methods=['POST'])
 def purchase(item_id):
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
     
     user_id = session['user_id']
     character = gamification.get_character(user_id)
     
     if not character:
-        return redirect(url_for('index'))
+        return jsonify({'status': 'error', 'message': 'Character not found'}), 404
     
     # Find the item in shop_items
     item = None
@@ -533,26 +538,28 @@ def purchase(item_id):
             break
     
     if not item:
-        flash('Item not found.', 'error')
-        return redirect(url_for('shop'))
+        return jsonify({'status': 'error', 'message': 'Item not found'}), 404
+    
+    # Check if already owned
+    if item_id in character.inventory:
+        return jsonify({'status': 'error', 'message': 'Item already owned'}), 400
     
     if character.coins < item['cost']:
-        flash('Not enough gold to purchase this item.', 'error')
-        return redirect(url_for('shop'))
+        return jsonify({'status': 'error', 'message': 'Not enough coins'}), 400
     
     # Purchase the item
     character.coins -= item['cost']
+    character.inventory.append(item_id)
     
-    # Add the item to character's inventory
-    if 'inventory' not in character.__dict__:
-        character.inventory = []
-    character.inventory.append(item)
-    
-    # Update character in MongoDB
+    # Save the updated character state
     gamification.save_state("gamification_state.json")
     
-    flash(f'Successfully purchased {item["name"]}!', 'success')
-    return redirect(url_for('shop'))
+    return jsonify({
+        'status': 'success',
+        'message': f'Successfully purchased {item["name"]}!',
+        'coins': character.coins,
+        'item_id': item_id
+    })
 
 @app.route('/update_progress', methods=['POST'])
 def update_progress():
@@ -794,6 +801,71 @@ def add_transaction():
     except Exception as e:
         print(f"Error adding transaction: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/character')
+def character():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    character = gamification.get_character(session['user_id'])
+    if not character:
+        return redirect(url_for('login'))
+    
+    return render_template('character.html', character=character, shop_items=shop_items)
+
+@app.route('/change_character_name', methods=['POST'])
+def change_character_name():
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
+    
+    data = request.get_json()
+    new_name = data.get('new_name')
+    
+    if not new_name:
+        return jsonify({'status': 'error', 'message': 'No name provided'}), 400
+    
+    try:
+        character = gamification.get_character(session['user_id'])
+        if character:
+            character.name = new_name
+            gamification.save_state("gamification_state.json")
+            return jsonify({'status': 'success'})
+        else:
+            return jsonify({'status': 'error', 'message': 'Character not found'}), 404
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/change_background', methods=['POST'])
+def change_background():
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
+    
+    user_id = session['user_id']
+    character = gamification.get_character(user_id)
+    
+    if not character:
+        return jsonify({'status': 'error', 'message': 'Character not found'}), 404
+    
+    data = request.get_json()
+    background_id = data.get('background_id')
+    
+    if not background_id:
+        return jsonify({'status': 'error', 'message': 'No background ID provided'}), 400
+    
+    # Check if the background is owned
+    if background_id not in character.inventory:
+        return jsonify({'status': 'error', 'message': 'Background not owned'}), 400
+    
+    # Update the character's current background
+    character.current_background = background_id
+    
+    # Save the updated character state
+    gamification.save_state("gamification_state.json")
+    
+    return jsonify({
+        'status': 'success',
+        'message': 'Background changed successfully'
+    })
 
 @app.errorhandler(404)
 def not_found_error(error):

@@ -42,18 +42,20 @@ class ChallengeType(Enum):
 class Character:
     """Represents a user's customizable avatar character"""
     
-    def __init__(self, user_id, name, character_class):
+    def __init__(self, user_id, name="Piggy", character_class=CharacterClass.SAVER):
         self.user_id = user_id
         self.name = name
         self.character_class = character_class
         self.level = CharacterLevel.NOVICE
         self.experience = 0
-        self.coins = 100  # Starting coins
+        self.experience_to_next_level = 100  # Base experience needed for level 1
+        self.coins = 0  # Starting coins
         self.streak = 0
         self.last_login = datetime.now()
         self.inventory = []
         self.active_missions = []
-    
+        self.current_background = None
+
     def to_dict(self):
         """Convert the character to a dictionary"""
         return {
@@ -62,6 +64,7 @@ class Character:
             'character_class': self.character_class.value,  # Store the value instead of name
             'level': self.level.value,  # Store the value instead of name
             'experience': self.experience,
+            'experience_to_next_level': self.experience_to_next_level,
             'coins': self.coins,
             'streak': self.streak,
             'last_login': self.last_login.isoformat(),
@@ -72,7 +75,7 @@ class Character:
             },
             'active_missions': [m.to_dict() if hasattr(m, 'to_dict') else m for m in self.active_missions]
         }
-    
+
     @classmethod
     def from_dict(cls, data):
         """Create a Character instance from a dictionary"""
@@ -104,6 +107,7 @@ class Character:
         
         character.level = level
         character.experience = data['experience']
+        character.experience_to_next_level = data['experience_to_next_level']
         character.coins = data['coins']
         character.streak = data['streak']
         character.last_login = datetime.fromisoformat(data['last_login'])
@@ -112,6 +116,70 @@ class Character:
         character.active_missions = []
         
         return character
+
+    def add_experience(self, amount):
+        self.experience += amount
+        # Calculate experience needed for next level (increases by 50% each level)
+        self.experience_to_next_level = int(100 * (1.5 ** (self.level - 1)))
+        
+        # Check for level up
+        while self.experience >= self.experience_to_next_level:
+            self.level_up()
+    
+    def level_up(self):
+        self.level += 1
+        self.experience -= self.experience_to_next_level
+        # Recalculate experience needed for next level
+        self.experience_to_next_level = int(100 * (1.5 ** (self.level - 1)))
+        # Add level up bonus
+        self.coins += 50 * self.level
+
+    def change_name(self, new_name):
+        """Change the character's name and save the state."""
+        self.name = new_name
+        self.save_state()
+        return True
+
+    def load_state(self):
+        """Load character state from JSON file."""
+        try:
+            with open('gamification_state.json', 'r') as f:
+                data = json.load(f)
+                if str(self.user_id) in data:
+                    char_data = data[str(self.user_id)]
+                    self.name = char_data.get('name', self.name)
+                    self.level = char_data.get('level', self.level)
+                    self.experience = char_data.get('experience', self.experience)
+                    self.experience_to_next_level = char_data.get('experience_to_next_level', self.experience_to_next_level)
+                    self.coins = char_data.get('coins', self.coins)
+                    self.streak = char_data.get('streak', self.streak)
+                    self.last_login = datetime.fromisoformat(char_data['last_login']) if char_data.get('last_login') else None
+                    self.inventory = char_data.get('inventory', [])
+                    self.active_missions = char_data.get('active_missions', [])
+        except FileNotFoundError:
+            self.save_state()  # Create file if it doesn't exist
+        except json.JSONDecodeError:
+            print("Error reading gamification state file. Starting fresh.")
+            self.save_state()
+
+    def save_state(self):
+        """Save character state to JSON file."""
+        try:
+            # Try to read existing data
+            try:
+                with open('gamification_state.json', 'r') as f:
+                    data = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                data = {}
+            
+            # Update data for this user
+            data[str(self.user_id)] = self.to_dict()
+            
+            # Write back to file
+            with open('gamification_state.json', 'w') as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            print(f"Error saving gamification state: {e}")
 
 
 class Mission:
@@ -160,6 +228,76 @@ class Mission:
         mission.is_completed = data['is_completed']
         mission.created_at = datetime.fromisoformat(data['start_date'])  # Use start_date from state file
         return mission
+
+
+class Shop:
+    """Manages the in-game shop and item purchases"""
+    
+    def __init__(self):
+        self.items = {
+            'backgrounds': [
+                {
+                    'id': 'forest_bg',
+                    'name': 'Forest Background',
+                    'description': 'A peaceful forest scene',
+                    'price': 100,
+                    'type': 'background',
+                    'image': 'forest_bg.png'
+                },
+                {
+                    'id': 'desert_bg',
+                    'name': 'Desert Background',
+                    'description': 'A vast desert landscape',
+                    'price': 100,
+                    'type': 'background',
+                    'image': 'desert_bg.png'
+                },
+                {
+                    'id': 'money_bg',
+                    'name': 'Money Background',
+                    'description': 'A background filled with coins and bills',
+                    'price': 100,
+                    'type': 'background',
+                    'image': 'money_bg.png'
+                }
+            ],
+            'outfits': [
+                {
+                    'id': 'basic_outfit',
+                    'name': 'Basic Outfit',
+                    'description': 'A simple starting outfit',
+                    'price': 50,
+                    'type': 'outfit',
+                    'image': 'basic_outfit.png'
+                },
+                {
+                    'id': 'fancy_outfit',
+                    'name': 'Fancy Outfit',
+                    'description': 'A more elegant outfit',
+                    'price': 150,
+                    'type': 'outfit',
+                    'image': 'fancy_outfit.png'
+                }
+            ],
+            'accessories': [
+                {
+                    'id': 'basic_hat',
+                    'name': 'Basic Hat',
+                    'description': 'A simple hat',
+                    'price': 30,
+                    'type': 'accessory',
+                    'image': 'basic_hat.png'
+                },
+                {
+                    'id': 'sunglasses',
+                    'name': 'Sunglasses',
+                    'description': 'Cool sunglasses',
+                    'price': 40,
+                    'type': 'accessory',
+                    'image': 'sunglasses.png'
+                }
+            ]
+        }
 
 
 class GamificationSystem:
