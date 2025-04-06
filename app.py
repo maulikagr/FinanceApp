@@ -29,8 +29,8 @@ client = MongoClient(os.getenv('MONGODB_URI'),
                     tlsAllowInvalidCertificates=False,
                     tlsCAFile=certifi.where())
 db = client['finance_app']
-users = db['users']
-user_data = db['userData']  # Collection for user financial data
+users = db['users']  # Store user authentication data
+user_data = db['userData']  # Store user financial data
 
 def analyze_transactions(transactions, savings_goal):
     """Analyze transactions and generate personalized daily quests using Gemini"""
@@ -192,7 +192,19 @@ def generate_fallback_insights(transaction_summary, savings_goal):
     }
 
 def store_user_financial_data(user_id, access_token):
-    # Get transactions and balances
+    # Check if user already has financial data
+    existing_data = user_data.find_one({'user_id': user_id})
+    
+    if existing_data and 'transactions' in existing_data and existing_data['transactions']:
+        # If user has existing transactions, only update the access token if needed
+        if existing_data.get('access_token') != access_token:
+            user_data.update_one(
+                {'user_id': user_id},
+                {'$set': {'access_token': access_token}}
+            )
+        return
+    
+    # Get transactions and balances for new accounts
     end_date = date.today()
     start_date = end_date - timedelta(days=30)
     transactions = plaid_client.get_transactions(access_token, start_date, end_date)
@@ -214,7 +226,12 @@ def store_user_financial_data(user_id, access_token):
                 'access_token': access_token,
                 'last_updated': str(date.today()),
                 'transactions': processed_transactions,
-                'balances': balances
+                'balances': balances,
+                'completed_quests': [],
+                'current_quests': [],
+                'savings_goal': 1000,  # Default savings goal
+                'current_savings': 0,
+                'emergency_fund': 0
             }
         },
         upsert=True
@@ -315,9 +332,23 @@ def create_account():
     if users.find_one({'email': email}):
         return render_template('login.html', error='Email already exists')
     
-    users.insert_one({
+    # Create user in authentication database
+    result = users.insert_one({
         'email': email,
         'password': generate_password_hash(password)
+    })
+    
+    # Create initial financial data record
+    user_id = str(result.inserted_id)
+    user_data.insert_one({
+        'user_id': user_id,
+        'savings_goal': 1000,
+        'current_savings': 0,
+        'emergency_fund': 0,
+        'transactions': [],
+        'balances': {},
+        'completed_quests': [],
+        'current_quests': []
     })
     
     return redirect(url_for('login'))
@@ -362,37 +393,37 @@ def show_transactions():
     # Get stored transactions from database
     user_financial_data = user_data.find_one({'user_id': session['user_id']})
     
-    if not user_financial_data or 'transactions' not in user_financial_data:
-        return render_template('error.html', message='No bank account connected or no transactions available')
+    if not user_financial_data:
+        return render_template('error.html', message='No financial data available')
     
-    # Process transactions to ensure amounts are properly formatted
-    transactions = []
-    for t in user_financial_data['transactions']:
+    # Process and sort transactions
+    processed_transactions = []
+    for t in user_financial_data.get('transactions', []):
         processed_t = t.copy()
         processed_t['amount'] = float(t['amount'])
         processed_t['abs_amount'] = abs(float(t['amount']))
-        transactions.append(processed_t)
+        processed_transactions.append(processed_t)
     
+    # Sort transactions by date in descending order
+    transactions = sorted(
+        processed_transactions,
+        key=lambda x: x['date'],
+        reverse=True
+    )
+    
+    # Get financial data
+    savings_goal = user_financial_data.get('savings_goal', 1000)
+    current_savings = user_financial_data.get('current_savings', 0)
+    emergency_fund = user_financial_data.get('emergency_fund', 0)
     balances = user_financial_data.get('balances', {})
     
-    # Initialize user and default values
-    user = users.find_one({'_id': ObjectId(session['user_id'])})
-    if not user:
-        return redirect(url_for('login'))
-    
-    # Get or set savings goal
-    savings_goal = user.get('savings_goal', 1000)  # Default goal
+    # Update savings goal if POST request
     if request.method == 'POST':
         savings_goal = float(request.form.get('savings_goal', savings_goal))
-        # Store the goal in the database
-        users.update_one(
-            {'_id': ObjectId(session['user_id'])},
+        user_data.update_one(
+            {'user_id': session['user_id']},
             {'$set': {'savings_goal': savings_goal}}
         )
-    
-    # Get current balances
-    current_savings = user.get('current_savings', 0)
-    emergency_fund = user.get('emergency_fund', 0)
     
     # Calculate progress percentages
     savings_percentage = min(100, (current_savings / savings_goal * 100) if savings_goal > 0 else 0)
@@ -402,7 +433,7 @@ def show_transactions():
     goals = analyze_transactions(transactions, savings_goal)
     
     # Add completion status to quests
-    completed_quests = user.get('completed_quests', [])
+    completed_quests = user_financial_data.get('completed_quests', [])
     for quest in goals['quests']:
         quest['completed'] = quest['title'] in completed_quests
     
@@ -413,7 +444,8 @@ def show_transactions():
                          current_savings=current_savings,
                          emergency_fund=emergency_fund,
                          savings_percentage=savings_percentage,
-                         emergency_percentage=emergency_percentage)
+                         emergency_percentage=emergency_percentage,
+                         balances=balances)
 
 @app.route('/complete_quest', methods=['POST'])
 def complete_quest():
@@ -424,17 +456,14 @@ def complete_quest():
     if quest_id is None:
         return jsonify({'status': 'error', 'message': 'No quest ID provided'}), 400
         
-    user = users.find_one({'_id': ObjectId(session['user_id'])})
-    if not user:
+    user_financial_data = user_data.find_one({'user_id': session['user_id']})
+    if not user_financial_data:
         return jsonify({'status': 'error', 'message': 'User not found'}), 404
         
     # Get the quest details
-    user_financial_data = user_data.find_one({'user_id': session['user_id']})
-    if not user_financial_data or 'transactions' not in user_financial_data:
-        return jsonify({'status': 'error', 'message': 'No financial data available'}), 400
-        
-    transactions = user_financial_data['transactions']
-    goals = analyze_transactions(transactions, user.get('savings_goal', 1000))
+    transactions = user_financial_data.get('transactions', [])
+    savings_goal = user_financial_data.get('savings_goal', 1000)
+    goals = analyze_transactions(transactions, savings_goal)
     
     if quest_id >= len(goals['quests']):
         return jsonify({'status': 'error', 'message': 'Invalid quest ID'}), 400
@@ -454,21 +483,21 @@ def complete_quest():
     emergency_amount = amount * 0.5
     
     # Get current balances
-    current_savings = user.get('current_savings', 0)
-    emergency_fund = user.get('emergency_fund', 0)
+    current_savings = user_financial_data.get('current_savings', 0)
+    emergency_fund = user_financial_data.get('emergency_fund', 0)
     
     # Update balances
     current_savings += goal_amount
     emergency_fund += emergency_amount
     
     # Update completed quests
-    completed_quests = user.get('completed_quests', [])
+    completed_quests = user_financial_data.get('completed_quests', [])
     if quest['title'] not in completed_quests:
         completed_quests.append(quest['title'])
     
-    # Update user in database
-    users.update_one(
-        {'_id': ObjectId(session['user_id'])},
+    # Update user financial data in database
+    user_data.update_one(
+        {'user_id': session['user_id']},
         {
             '$set': {
                 'current_savings': current_savings,
@@ -483,6 +512,46 @@ def complete_quest():
         'current_savings': current_savings,
         'emergency_fund': emergency_fund
     })
+
+@app.route('/add_transaction', methods=['POST'])
+def add_transaction():
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
+    
+    try:
+        data = request.json
+        user_id = session['user_id']
+        
+        # Get the user's financial data
+        user_financial_data = user_data.find_one({'user_id': user_id})
+        if not user_financial_data:
+            return jsonify({'status': 'error', 'message': 'No financial data found'}), 404
+        
+        # Create new transaction with proper formatting
+        new_transaction = {
+            'date': data['date'],
+            'name': data['name'],
+            'amount': float(data['amount']),
+            'category': data['category'],
+            'transaction_id': str(ObjectId()),  # Generate a unique ID
+            'pending': False,
+            'manual': True  # Flag to indicate this is a manually added transaction
+        }
+        
+        # Add the new transaction to the transactions list
+        transactions = user_financial_data.get('transactions', [])
+        transactions.append(new_transaction)
+        
+        # Update the user's data in the database
+        user_data.update_one(
+            {'user_id': user_id},
+            {'$set': {'transactions': transactions}}
+        )
+        
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        print(f"Error adding transaction: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True) 
