@@ -22,10 +22,10 @@
       "name": "0monkeyballs0",
       "character_class": "Saver",
       "level": 1,
-      "experience": 15,
-      "coins": 130,
+      "experience": 25,
+      "coins": 150,
       "streak": 1,
-      "last_login": "2025-04-05T17:35:20.246622",
+      "last_login": "2025-04-05T23:26:54.566738",
       "inventory": {
         "outfits": [],
         "accessories": [],
@@ -39,7 +39,7 @@
           "reward_coins": 10,
           "reward_exp": 5,
           "is_completed": true,
-          "start_date": "2025-04-05T17:34:09.901387"
+          "start_date": "2025-04-05T23:26:50.427563"
         },
         {
           "title": "Save $10",
@@ -48,7 +48,7 @@
           "reward_coins": 20,
           "reward_exp": 10,
           "is_completed": false,
-          "start_date": "2025-04-05T17:34:09.901399"
+          "start_date": "2025-04-05T23:26:50.427572"
         },
         {
           "title": "Weekly Budget Review",
@@ -57,20 +57,77 @@
           "reward_coins": 50,
           "reward_exp": 25,
           "is_completed": false,
-          "start_date": "2025-04-05T17:34:09.901402"
+          "start_date": "2025-04-05T23:26:50.427575"
         }
       ],
       "active_challenges": [
         {
-          "title": "Saving Streak",
-          "description": "Maintain a saving streak for 7 days",
-          "challenge_type": "Saving",
-          "difficulty": "Easy",
-          "reward_coins": 100,
-          "reward_exp": 50,
+          "title": "Investment Master",
+          "description": "Make 5 investments this month",
+          "challenge_type": "Investing",
+          "difficulty": "Medium",
+          "reward_coins": 200,
+          "reward_exp": 100,
           "progress": 0.0,
           "is_completed": false,
-          "start_date": "2025-04-05T17:34:14.244607"
+          "start_date": "2025-04-05T23:26:52.984570"
+        }
+      ]
+    },
+    "rishi Rathi": {
+      "user_id": "rishi Rathi",
+      "name": "1234",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 5,
+      "coins": 110,
+      "streak": 1,
+      "last_login": "2025-04-05T23:26:42.920474",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": [
+        {
+          "title": "Daily Login",
+          "description": "Log in to the app",
+          "mission_type": "Daily",
+          "reward_coins": 10,
+          "reward_exp": 5,
+          "is_completed": true,
+          "start_date": "2025-04-05T23:08:35.714069"
+        },
+        {
+          "title": "Save $10",
+          "description": "Save $10 today",
+          "mission_type": "Daily",
+          "reward_coins": 20,
+          "reward_exp": 10,
+          "is_completed": false,
+          "start_date": "2025-04-05T23:08:35.714073"
+        },
+        {
+          "title": "Weekly Budget Review",
+          "description": "Review your weekly budget",
+          "mission_type": "Weekly",
+          "reward_coins": 50,
+          "reward_exp": 25,
+          "is_completed": false,
+          "start_date": "2025-04-05T23:08:35.714075"
+        }
+      ],
+      "active_challenges": [
+        {
+          "title": "Investment Master",
+          "description": "Make 5 investments this month",
+          "challenge_type": "Investing",
+          "difficulty": "Medium",
+          "reward_coins": 200,
+          "reward_exp": 100,
+          "progress": 0.0,
+          "is_completed": false,
+          "start_date": "2025-04-05T23:08:35.714105"
         }
       ]
     }

@@ -5,11 +5,6 @@ import os
 from datetime import datetime, timedelta, date
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
-from pymongo import MongoClient
-from werkzeug.security import generate_password_hash, check_password_hash
-from bson.objectid import ObjectId
-import google.generativeai as genai
-import json
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Required for session management
@@ -28,72 +23,6 @@ def init_db():
     conn.close()
 
 init_db()
-# Configure Gemini
-genai.configure(api_key='AIzaSyAZgjfdVJ2N3L0ET5u9DcNgZq4f2_klKQI')
-model = genai.GenerativeModel('gemini-1.5-pro')
-
-# MongoDB Atlas connection
-client = MongoClient(os.getenv('MONGODB_URI'))
-db = client.finance_app
-users = db.users
-
-def analyze_transactions(transactions):
-    # Convert transactions to a format Gemini can understand
-    transaction_summary = []
-    category_totals = {}
-    category_counts = {}
-    
-    # Analyze transaction patterns
-    for t in transactions:
-        category = t['category'][0] if t.get('category') and len(t['category']) > 0 else 'Uncategorized'
-        amount = abs(t['amount'])
-        
-        # Track category totals and counts
-        category_totals[category] = category_totals.get(category, 0) + amount
-        category_counts[category] = category_counts.get(category, 0) + 1
-        
-        transaction_summary.append({
-            'date': str(t['date']),
-            'amount': amount,
-            'category': category,
-            'name': t['name']
-        })
-    
-    # Calculate averages and identify top categories
-    top_categories = sorted(category_totals.items(), key=lambda x: x[1], reverse=True)
-    num_categories = len(top_categories)
-    
-    if num_categories == 0:
-        return []
-    
-    # Create goals based on available categories
-    goals = []
-    
-    if num_categories >= 1:
-        goals.append({
-            "title": f"Reduce {top_categories[0][0]} spending",
-            "target": int(top_categories[0][1] * 0.2),
-            "progress": 0,
-            "description": f"Based on your frequent {top_categories[0][0]} expenses, try to reduce today's spending"
-        })
-    
-    if num_categories >= 2:
-        goals.append({
-            "title": f"Track {top_categories[1][0]} transactions",
-            "target": category_counts.get(top_categories[1][0], 0),
-            "progress": 0,
-            "description": f"Monitor your {top_categories[1][0]} spending patterns"
-        })
-    
-    if num_categories >= 3:
-        goals.append({
-            "title": f"Save on {top_categories[2][0]}",
-            "target": int(top_categories[2][1] * 0.15),
-            "progress": 0,
-            "description": f"Find ways to reduce {top_categories[2][0]} expenses"
-        })
-    
-    return goals
 
 @app.route('/')
 def index():
@@ -116,10 +45,6 @@ def login():
         
         if user and check_password_hash(user[1], password):
             session['user_id'] = user[0]
-        user = users.find_one({'email': email})
-        
-        if user and check_password_hash(user['password'], password):
-            session['user_id'] = str(user['_id'])
             return redirect(url_for('index'))
         else:
             return render_template('login.html', error='Invalid email or password')
@@ -147,15 +72,6 @@ def create_account():
     except sqlite3.IntegrityError:
         conn.close()
         return render_template('login.html', error='Email already exists')
-    if users.find_one({'email': email}):
-        return render_template('login.html', error='Email already exists')
-    
-    users.insert_one({
-        'email': email,
-        'password': generate_password_hash(password)
-    })
-    
-    return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
@@ -192,10 +108,6 @@ def show_transactions():
     transactiondatabase.write(str(transactions))
 
     return render_template('transactions.html', transactions=transactions)
-    # Generate personalized goals
-    goals = analyze_transactions(transactions)
-    
-    return render_template('transactions.html', transactions=transactions, goals=goals)
 
 if __name__ == '__main__':
     app.run(debug=True) 

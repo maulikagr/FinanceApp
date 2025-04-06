@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 import plaid
 from plaid.api import plaid_api
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
@@ -12,10 +11,6 @@ class PlaidLinkSetup:
     def __init__(self):
         configuration = plaid.Configuration(
             host=plaid.Environment.Sandbox,
-        load_dotenv()
-        
-        configuration = plaid.Configuration(
-            host=plaid.Environment.Sandbox if os.getenv('PLAID_ENV') == 'sandbox' else plaid.Environment.Development,
             api_key={
                 'clientId': os.getenv('PLAID_CLIENT_ID'),
                 'secret': os.getenv('PLAID_SECRET'),
@@ -24,15 +19,11 @@ class PlaidLinkSetup:
         api_client = plaid.ApiClient(configuration)
         self.client = plaid_api.PlaidApi(api_client)
 
-        
-        self.client = plaid_api.PlaidApi(plaid.ApiClient(configuration))
-    
     def create_link_token(self):
         try:
             request = LinkTokenCreateRequest(
                 products=[Products("transactions")],
                 client_name="Finance App",
-                client_name="Your App Name",
                 country_codes=[CountryCode("US")],
                 language="en",
                 user=LinkTokenCreateRequestUser(
