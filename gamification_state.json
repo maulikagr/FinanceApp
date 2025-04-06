@@ -14,8 +14,7 @@
         "accessories": [],
         "pets": []
       },
-      "active_missions": [],
-      "active_challenges": []
+      "active_missions": []
     },
     "Rishi Rathi": {
       "user_id": "Rishi Rathi",
@@ -24,55 +23,14 @@
       "level": 1,
       "experience": 25,
       "coins": 150,
-      "streak": 1,
+      "streak": 0,
       "last_login": "2025-04-05T23:26:54.566738",
       "inventory": {
         "outfits": [],
         "accessories": [],
         "pets": []
       },
-      "active_missions": [
-        {
-          "title": "Daily Login",
-          "description": "Log in to the app",
-          "mission_type": "Daily",
-          "reward_coins": 10,
-          "reward_exp": 5,
-          "is_completed": true,
-          "start_date": "2025-04-05T23:26:50.427563"
-        },
-        {
-          "title": "Save $10",
-          "description": "Save $10 today",
-          "mission_type": "Daily",
-          "reward_coins": 20,
-          "reward_exp": 10,
-          "is_completed": false,
-          "start_date": "2025-04-05T23:26:50.427572"
-        },
-        {
-          "title": "Weekly Budget Review",
-          "description": "Review your weekly budget",
-          "mission_type": "Weekly",
-          "reward_coins": 50,
-          "reward_exp": 25,
-          "is_completed": false,
-          "start_date": "2025-04-05T23:26:50.427575"
-        }
-      ],
-      "active_challenges": [
-        {
-          "title": "Investment Master",
-          "description": "Make 5 investments this month",
-          "challenge_type": "Investing",
-          "difficulty": "Medium",
-          "reward_coins": 200,
-          "reward_exp": 100,
-          "progress": 0.0,
-          "is_completed": false,
-          "start_date": "2025-04-05T23:26:52.984570"
-        }
-      ]
+      "active_missions": []
     },
     "rishi Rathi": {
       "user_id": "rishi Rathi",
@@ -81,8 +39,40 @@
       "level": 1,
       "experience": 5,
       "coins": 110,
-      "streak": 1,
+      "streak": 0,
       "last_login": "2025-04-05T23:26:42.920474",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": []
+    },
+    "67f23896f2de899e39ae433b": {
+      "user_id": "67f23896f2de899e39ae433b",
+      "name": "67f23896f2de899e39ae433b",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 0,
+      "coins": 205,
+      "streak": 1,
+      "last_login": "2025-04-06T02:06:43.040578",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": []
+    },
+    "67f24837c7adb97dfcb688d9": {
+      "user_id": "67f24837c7adb97dfcb688d9",
+      "name": "Maulik.Agr",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 0,
+      "coins": 90,
+      "streak": 1,
+      "last_login": "2025-04-06T02:28:41.524627",
       "inventory": {
         "outfits": [],
         "accessories": [],
@@ -90,44 +80,40 @@
       },
       "active_missions": [
         {
-          "title": "Daily Login",
-          "description": "Log in to the app",
-          "mission_type": "Daily",
-          "reward_coins": 10,
-          "reward_exp": 5,
+          "id": "67f24a8c2eb559eb896ccdb5",
+          "title": "Income Savings",
+          "description": "Save $35.21 from today's income (20% of income)",
+          "progress": 100,
           "is_completed": true,
-          "start_date": "2025-04-05T23:08:35.714069"
+          "mission_type": {
+            "name": "Daily Quest"
+          },
+          "reward_exp": 5,
+          "reward_coins": 5
         },
         {
-          "title": "Save $10",
-          "description": "Save $10 today",
-          "mission_type": "Daily",
-          "reward_coins": 20,
-          "reward_exp": 10,
-          "is_completed": false,
-          "start_date": "2025-04-05T23:08:35.714073"
+          "id": "67f24a8c2eb559eb896ccdb6",
+          "title": "Track Your Spending",
+          "description": "Record all your expenses today for better insights",
+          "progress": 100,
+          "is_completed": true,
+          "mission_type": {
+            "name": "Daily Quest"
+          },
+          "reward_exp": 5,
+          "reward_coins": 5
         },
         {
-          "title": "Weekly Budget Review",
-          "description": "Review your weekly budget",
-          "mission_type": "Weekly",
-          "reward_coins": 50,
-          "reward_exp": 25,
-          "is_completed": false,
-          "start_date": "2025-04-05T23:08:35.714075"
-        }
-      ],
-      "active_challenges": [
-        {
-          "title": "Investment Master",
-          "description": "Make 5 investments this month",
-          "challenge_type": "Investing",
-          "difficulty": "Medium",
-          "reward_coins": 200,
-          "reward_exp": 100,
-          "progress": 0.0,
-          "is_completed": false,
-          "start_date": "2025-04-05T23:08:35.714105"
+          "id": "67f24a8c2eb559eb896ccdb7",
+          "title": "Track Your Spending",
+          "description": "Record all your expenses today for better insights",
+          "progress": 100,
+          "is_completed": true,
+          "mission_type": {
+            "name": "Daily Quest"
+          },
+          "reward_exp": 5,
+          "reward_coins": 5
         }
       ]
     }

@@ -53,7 +53,6 @@ class Character:
         self.last_login = datetime.now()
         self.inventory = []
         self.active_missions = []
-        self.active_challenges = []
     
     def to_dict(self):
         """Convert the character to a dictionary"""
@@ -71,8 +70,7 @@ class Character:
                 'accessories': [],
                 'pets': []
             },
-            'active_missions': [m.to_dict() for m in self.active_missions],
-            'active_challenges': [c.to_dict() for c in self.active_challenges]
+            'active_missions': [m.to_dict() if hasattr(m, 'to_dict') else m for m in self.active_missions]
         }
     
     @classmethod
@@ -107,13 +105,11 @@ class Character:
         character.level = level
         character.experience = data['experience']
         character.coins = data['coins']
-        character.day_streak = data['streak']
+        character.streak = data['streak']
         character.last_login = datetime.fromisoformat(data['last_login'])
         
-        # Initialize empty lists for missions and challenges
-        # These will be populated by the GamificationSystem.load_state method
+        # Initialize empty list for missions
         character.active_missions = []
-        character.active_challenges = []
         
         return character
 
@@ -166,67 +162,12 @@ class Mission:
         return mission
 
 
-class Challenge:
-    """Represents a challenge that a character can participate in"""
-    
-    def __init__(self, title, description, challenge_type, difficulty, reward_coins, reward_exp):
-        self.title = title
-        self.description = description
-        self.challenge_type = challenge_type
-        self.difficulty = difficulty
-        self.reward_coins = reward_coins
-        self.reward_exp = reward_exp
-        self.progress = 0.0
-        self.is_completed = False
-        self.created_at = datetime.now()
-    
-    def to_dict(self):
-        """Convert the challenge to a dictionary"""
-        return {
-            'title': self.title,
-            'description': self.description,
-            'challenge_type': self.challenge_type.value,  # Store the value instead of name
-            'difficulty': self.difficulty,
-            'reward_coins': self.reward_coins,
-            'reward_exp': self.reward_exp,
-            'progress': self.progress,
-            'is_completed': self.is_completed,
-            'start_date': self.created_at.isoformat()  # Use start_date to match state file
-        }
-    
-    @classmethod
-    def from_dict(cls, data):
-        # Find the challenge type by value
-        challenge_type = None
-        for type_enum in ChallengeType:
-            if type_enum.value == data['challenge_type']:
-                challenge_type = type_enum
-                break
-        
-        if not challenge_type:
-            raise ValueError(f"Invalid challenge type: {data['challenge_type']}")
-        
-        challenge = cls(
-            data['title'],
-            data['description'],
-            challenge_type,
-            data['difficulty'],
-            data['reward_coins'],
-            data['reward_exp']
-        )
-        challenge.progress = data.get('progress', 0.0)  # Use get() with default value
-        challenge.is_completed = data['is_completed']
-        challenge.created_at = datetime.fromisoformat(data['start_date'])  # Use start_date from state file
-        return challenge
-
-
 class GamificationSystem:
     """Manages the gamification system for the finance app"""
     
     def __init__(self):
         self.characters = {}
         self.mission_templates = self._generate_mission_templates()
-        self.challenge_templates = self._generate_challenge_templates()
     
     def _generate_mission_templates(self):
         return [
@@ -234,13 +175,6 @@ class GamificationSystem:
             Mission("Save $10", "Save $10 today", MissionType.DAILY, 20, 10),
             Mission("Weekly Budget Review", "Review your weekly budget", MissionType.WEEKLY, 50, 25),
             Mission("Monthly Investment", "Make a monthly investment", MissionType.MONTHLY, 100, 50),
-        ]
-    
-    def _generate_challenge_templates(self):
-        return [
-            Challenge("Saving Streak", "Maintain a saving streak for 7 days", ChallengeType.SAVING, "Easy", 100, 50),
-            Challenge("Investment Master", "Make 5 investments this month", ChallengeType.INVESTING, "Medium", 200, 100),
-            Challenge("Budget Expert", "Stay within budget for 30 days", ChallengeType.BUDGETING, "Hard", 300, 150),
         ]
     
     def create_character(self, user_id, name, character_class):
@@ -278,41 +212,11 @@ class GamificationSystem:
         
         return new_missions
     
-    def assign_challenge(self, user_id):
-        character = self.get_character(user_id)
-        if not character:
-            raise ValueError("Character not found")
-        
-        # Clear completed challenges
-        character.active_challenges = [c for c in character.active_challenges if not c.is_completed]
-        
-        # Assign new challenge if none active
-        if not character.active_challenges:
-            template = random.choice(self.challenge_templates)
-            new_challenge = Challenge(
-                template.title,
-                template.description,
-                template.challenge_type,
-                template.difficulty,
-                template.reward_coins,
-                template.reward_exp
-            )
-            character.active_challenges.append(new_challenge)
-            return new_challenge
-        
-        return None
-    
     def get_active_missions(self, user_id):
         character = self.get_character(user_id)
         if not character:
             raise ValueError("Character not found")
         return character.active_missions
-    
-    def get_active_challenges(self, user_id):
-        character = self.get_character(user_id)
-        if not character:
-            raise ValueError("Character not found")
-        return character.active_challenges
     
     def purchase_item(self, user_id, item_type, item_id, cost):
         character = self.get_character(user_id)
@@ -334,7 +238,6 @@ class GamificationSystem:
         
         results = {
             "missions_completed": [],
-            "challenges_completed": [],
             "level_up": False
         }
         
@@ -346,17 +249,6 @@ class GamificationSystem:
                     character.coins += mission.reward_coins
                     character.experience += mission.reward_exp
                     results["missions_completed"].append(mission.title)
-        
-        # Update challenges
-        for challenge in character.active_challenges:
-            if not challenge.is_completed:
-                progress = self._calculate_challenge_progress(challenge, user_data)
-                challenge.progress = progress
-                if progress >= 100:
-                    challenge.is_completed = True
-                    character.coins += challenge.reward_coins
-                    character.experience += challenge.reward_exp
-                    results["challenges_completed"].append(challenge.title)
         
         # Check for level up
         old_level = character.level
@@ -380,16 +272,6 @@ class GamificationSystem:
             if mission.title == "Monthly Investment":
                 return user_data.get("investments_made", 0) > 0
         return False
-    
-    def _calculate_challenge_progress(self, challenge, user_data):
-        """Calculate challenge progress based on user data"""
-        if challenge.challenge_type == ChallengeType.SAVING:
-            return min(100, (user_data.get("days_without_impulse", 0) / 7) * 100)
-        elif challenge.challenge_type == ChallengeType.INVESTING:
-            return min(100, (user_data.get("investments_made", 0) / 5) * 100)
-        elif challenge.challenge_type == ChallengeType.BUDGETING:
-            return min(100, (user_data.get("days_without_eating_out", 0) / 30) * 100)
-        return 0
     
     def _calculate_level(self, experience):
         """Calculate character level based on experience"""
@@ -421,7 +303,7 @@ class GamificationSystem:
             
             # Load characters
             for user_id, char_data in state['characters'].items():
-                # Initialize character without missions and challenges
+                # Initialize character without missions
                 character = Character.from_dict(char_data)
                 
                 # Add missions if they exist for this user
@@ -432,15 +314,6 @@ class GamificationSystem:
                     ]
                 else:
                     character.active_missions = []
-                
-                # Add challenges if they exist for this user
-                if user_id in state.get('active_challenges', {}):
-                    character.active_challenges = [
-                        Challenge.from_dict(challenge_data)
-                        for challenge_data in state['active_challenges'][user_id]
-                    ]
-                else:
-                    character.active_challenges = []
                 
                 self.characters[user_id] = character
         except FileNotFoundError:
@@ -468,22 +341,13 @@ if __name__ == "__main__":
     missions = gamification.assign_missions(user_id)
     print("Assigned {} missions to user {}".format(len(missions), user_id))
     
-    # Assign a challenge
-    challenge = gamification.assign_challenge(user_id)
-    print("Assigned challenge: {}".format(challenge.title if challenge else 'None'))
-    
     # Update progress with some user data
     user_data = {
         "login": 1,
         "cooked_meals": 2,
-        "days_without_impulse": 1,
         "savings_target_reached": 0,
         "budget_categories_under": 3,
-        "days_without_eating_out": 3,
-        "savings_multiplier": 1.5,
-        "side_income_earned": 200,
         "investments_made": 0,
-        "expense_reduction_percent": 5
     }
     
     results = gamification.update_user_progress(user_id, user_data)

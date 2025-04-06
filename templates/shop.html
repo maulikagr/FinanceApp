@@ -6,9 +6,9 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h4 class="mb-0"><i class="fas fa-store me-2"></i>Shop</h4>
-        <div class="user-coins">
+        <div class="user-gold">
             <i class="fas fa-coins text-warning me-1"></i>
-            <span class="fw-bold">{{ character.coins }}</span>
+            <span class="fw-bold">{{ g.character.coins }}</span>
         </div>
     </div>
     <div class="card-body">
@@ -27,14 +27,19 @@
                                             <span class="badge bg-warning text-dark">
                                                 <i class="fas fa-coins me-1"></i> {{ item.cost }}
                                             </span>
-                                            {% if character.coins >= item.cost %}
-                                                <a href="{{ url_for('purchase', item_id=item.id) }}" 
-                                                   class="btn btn-primary btn-sm">
-                                                    <i class="fas fa-shopping-cart me-1"></i> Purchase
-                                                </a>
+                                            {% if item in g.character.inventory %}
+                                                <button class="btn btn-success btn-sm" disabled>
+                                                    <i class="fas fa-check me-1"></i> Owned
+                                                </button>
+                                            {% elif g.character.coins >= item.cost %}
+                                                <form action="{{ url_for('purchase', item_id=item.id) }}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-shopping-cart me-1"></i> Purchase
+                                                    </button>
+                                                </form>
                                             {% else %}
                                                 <button class="btn btn-secondary btn-sm" disabled>
-                                                    <i class="fas fa-lock me-1"></i> Not enough coins
+                                                    <i class="fas fa-lock me-1"></i> Not enough gold
                                                 </button>
                                             {% endif %}
                                         </div>
@@ -54,13 +59,13 @@
         <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>About the Shop</h4>
     </div>
     <div class="card-body">
-        <p>The shop is where you can spend your hard-earned coins to customize your character. You can purchase:</p>
+        <p>The shop is where you can spend your hard-earned gold to customize your character. You can purchase:</p>
         <ul>
             <li><strong>Outfits:</strong> Change your character's appearance</li>
             <li><strong>Accessories:</strong> Add special items to your character</li>
             <li><strong>Pets:</strong> Get a companion to follow you around</li>
         </ul>
-        <p>Earn more coins by completing missions and challenges!</p>
+        <p>Earn gold by completing daily quests and challenges!</p>
     </div>
 </div>
 {% endblock %} 
