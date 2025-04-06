@@ -49,8 +49,55 @@ class PlaidClient:
                 response = self.client.transactions_get(request)
                 transactions.extend(response.transactions)
             
-            return transactions
+            processed_transactions = []
+            for t in transactions:
+                # Ensure all fields are serializable
+                transaction_data = {
+                    'date': str(t.date),
+                    'amount': float(t.amount) if t.amount is not None else 0.0,
+                    'name': str(t.name) if t.name else '',
+                    'category': [str(cat) for cat in t.category] if t.category else ['Uncategorized'],
+                    'transaction_id': str(t.transaction_id) if t.transaction_id else '',
+                    'merchant_name': str(t.merchant_name) if t.merchant_name else '',
+                    'payment_channel': str(t.payment_channel) if t.payment_channel else '',
+                    'pending': bool(t.pending) if t.pending is not None else False
+                }
+                processed_transactions.append(transaction_data)
             
+            return processed_transactions
         except plaid.ApiException as e:
-            print(f"Error fetching transactions: {e}")
+            print(f"Error getting transactions: {e}")
+            return []
+
+    def get_balances(self, access_token):
+        try:
+            from plaid.model.accounts_balance_get_request import AccountsBalanceGetRequest
+            
+            request = AccountsBalanceGetRequest(
+                access_token=access_token
+            )
+            
+            response = self.client.accounts_balance_get(request)
+            
+            processed_accounts = []
+            for account in response.accounts:
+                # Ensure all fields are serializable
+                account_data = {
+                    'account_id': str(account.account_id),
+                    'name': str(account.name),
+                    'type': str(account.type),
+                    'subtype': str(account.subtype),
+                    'balances': {
+                        'available': float(account.balances.available) if account.balances.available is not None else 0.0,
+                        'current': float(account.balances.current) if account.balances.current is not None else 0.0,
+                        'limit': float(account.balances.limit) if account.balances.limit is not None else None,
+                        'iso_currency_code': str(account.balances.iso_currency_code) if account.balances.iso_currency_code else 'USD',
+                        'unofficial_currency_code': str(account.balances.unofficial_currency_code) if account.balances.unofficial_currency_code else None
+                    }
+                }
+                processed_accounts.append(account_data)
+            
+            return processed_accounts
+        except plaid.ApiException as e:
+            print(f"Error getting balances: {e}")
             return [] 

@@ -22,7 +22,7 @@ class PlaidLinkSetup:
         
         self.client = plaid_api.PlaidApi(plaid.ApiClient(configuration))
     
-    def create_link_token(self):
+    def create_link_token(self, user_id=None):
         try:
             request = LinkTokenCreateRequest(
                 products=[Products("transactions")],
@@ -30,7 +30,7 @@ class PlaidLinkSetup:
                 country_codes=[CountryCode("US")],
                 language="en",
                 user=LinkTokenCreateRequestUser(
-                    client_user_id=str(os.urandom(16).hex())
+                    client_user_id=user_id if user_id else str(os.urandom(16).hex())
                 )
             )
             response = self.client.link_token_create(request)

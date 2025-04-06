@@ -2,26 +2,25 @@ from flask import Flask, jsonify, request, render_template, session, redirect, u
 from plaid_link import PlaidLinkSetup
 from plaid_transactions import PlaidClient
 import os
-from datetime import datetime, timedelta, date
+from datetime import timedelta, date
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
-from bson.objectid import ObjectId
-import google.generativeai as genai
-import json
+# import google.generativeai as genai
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Required for session management
 plaid_link = PlaidLinkSetup()
 plaid_client = PlaidClient()
 
-# Configure Gemini
-genai.configure(api_key='AIzaSyAZgjfdVJ2N3L0ET5u9DcNgZq4f2_klKQI')
-model = genai.GenerativeModel('gemini-1.5-pro')
+# # Configure Gemini
+# genai.configure(api_key='AIzaSyAZgjfdVJ2N3L0ET5u9DcNgZq4f2_klKQI')
+# model = genai.GenerativeModel('gemini-1.5-pro')
 
 # MongoDB Atlas connection
 client = MongoClient(os.getenv('MONGODB_URI'))
 db = client.finance_app
 users = db.users
+user_data = db.userData  # New collection for user financial data
 
 def analyze_transactions(transactions):
     # Convert transactions to a format Gemini can understand
@@ -81,11 +80,40 @@ def analyze_transactions(transactions):
     
     return goals
 
+def store_user_financial_data(user_id, access_token):
+    # Get transactions and balances
+    end_date = date.today()
+    start_date = end_date - timedelta(days=30)
+    transactions = plaid_client.get_transactions(access_token, start_date, end_date)
+    balances = plaid_client.get_balances(access_token)
+    
+    # Convert date objects to strings in transactions
+    processed_transactions = []
+    for transaction in transactions:
+        processed_transaction = transaction.copy()
+        if 'date' in processed_transaction:
+            processed_transaction['date'] = str(processed_transaction['date'])
+        processed_transactions.append(processed_transaction)
+    
+    # Store the data
+    user_data.update_one(
+        {'user_id': user_id},
+        {
+            '$set': {
+                'access_token': access_token,
+                'last_updated': str(date.today()),
+                'transactions': processed_transactions,
+                'balances': balances
+            }
+        },
+        upsert=True
+    )
+
 @app.route('/')
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    link_token = plaid_link.create_link_token()
+    link_token = plaid_link.create_link_token(session['user_id'])
     return render_template('index.html', link_token=link_token)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -97,7 +125,17 @@ def login():
         user = users.find_one({'email': email})
         
         if user and check_password_hash(user['password'], password):
-            session['user_id'] = str(user['_id'])
+            user_id = str(user['_id'])
+            session['user_id'] = user_id
+            
+            # Check if user has existing financial data
+            user_financial_data = user_data.find_one({'user_id': user_id})
+            
+            if user_financial_data and 'access_token' in user_financial_data:
+                # Update the user's financial data
+                store_user_financial_data(user_id, user_financial_data['access_token'])
+                return redirect(url_for('show_transactions'))
+            
             return redirect(url_for('index'))
         else:
             return render_template('login.html', error='Invalid email or password')
@@ -135,29 +173,47 @@ def exchange_public_token():
         
     public_token = request.json['public_token']
     access_token = plaid_link.exchange_public_token(public_token)
+    
     if access_token:
+        # Check if this bank account is already linked to another user
+        existing_user = user_data.find_one({'access_token': access_token})
+        if existing_user and existing_user['user_id'] != session['user_id']:
+            return jsonify({
+                'status': 'error',
+                'message': 'This bank account is already linked to another user'
+            }), 400
+        
+        # Store the access token in session
         session['access_token'] = access_token
+        
+        # Store the financial data
+        store_user_financial_data(session['user_id'], access_token)
+        
         return jsonify({'status': 'success'})
+    
     return jsonify({'status': 'error', 'message': 'Failed to exchange token'}), 400
 
 @app.route('/transactions')
 def show_transactions():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-        
-    access_token = session.get('access_token')
-    if not access_token:
-        return render_template('error.html', message='No bank account connected')
     
-    # Get transactions for the last 30 days
-    end_date = date.today()
-    start_date = end_date - timedelta(days=30)
-    transactions = plaid_client.get_transactions(access_token, start_date, end_date)
+    # Get stored transactions from database
+    user_financial_data = user_data.find_one({'user_id': session['user_id']})
+    
+    if not user_financial_data or 'transactions' not in user_financial_data:
+        return render_template('error.html', message='No bank account connected or no transactions available')
+    
+    transactions = user_financial_data['transactions']
+    balances = user_financial_data.get('balances', {})
     
     # Generate personalized goals
     goals = analyze_transactions(transactions)
     
-    return render_template('transactions.html', transactions=transactions, goals=goals)
+    return render_template('transactions.html', 
+                         transactions=transactions, 
+                         goals=goals,
+                         balances=balances)
 
 if __name__ == '__main__':
     app.run(debug=True) 
