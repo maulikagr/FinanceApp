@@ -6,19 +6,85 @@ from datetime import datetime, timedelta, date
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
+import google.generativeai as genai
+import json
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Required for session management
 plaid_link = PlaidLinkSetup()
 plaid_client = PlaidClient()
 
+# Configure Gemini
+genai.configure(api_key='AIzaSyAZgjfdVJ2N3L0ET5u9DcNgZq4f2_klKQI')
+model = genai.GenerativeModel('gemini-1.5-pro')
+
 # MongoDB Atlas connection
 client = MongoClient(os.getenv('MONGODB_URI'))
 db = client.finance_app
 users = db.users
 
+def analyze_transactions(transactions):
+    # Convert transactions to a format Gemini can understand
+    transaction_summary = []
+    category_totals = {}
+    category_counts = {}
+    
+    # Analyze transaction patterns
+    for t in transactions:
+        category = t['category'][0] if t.get('category') and len(t['category']) > 0 else 'Uncategorized'
+        amount = abs(t['amount'])
+        
+        # Track category totals and counts
+        category_totals[category] = category_totals.get(category, 0) + amount
+        category_counts[category] = category_counts.get(category, 0) + 1
+        
+        transaction_summary.append({
+            'date': str(t['date']),
+            'amount': amount,
+            'category': category,
+            'name': t['name']
+        })
+    
+    # Calculate averages and identify top categories
+    top_categories = sorted(category_totals.items(), key=lambda x: x[1], reverse=True)
+    num_categories = len(top_categories)
+    
+    if num_categories == 0:
+        return []
+    
+    # Create goals based on available categories
+    goals = []
+    
+    if num_categories >= 1:
+        goals.append({
+            "title": f"Reduce {top_categories[0][0]} spending",
+            "target": int(top_categories[0][1] * 0.2),
+            "progress": 0,
+            "description": f"Based on your frequent {top_categories[0][0]} expenses, try to reduce today's spending"
+        })
+    
+    if num_categories >= 2:
+        goals.append({
+            "title": f"Track {top_categories[1][0]} transactions",
+            "target": category_counts.get(top_categories[1][0], 0),
+            "progress": 0,
+            "description": f"Monitor your {top_categories[1][0]} spending patterns"
+        })
+    
+    if num_categories >= 3:
+        goals.append({
+            "title": f"Save on {top_categories[2][0]}",
+            "target": int(top_categories[2][1] * 0.15),
+            "progress": 0,
+            "description": f"Find ways to reduce {top_categories[2][0]} expenses"
+        })
+    
+    return goals
+
 @app.route('/')
 def index():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     link_token = plaid_link.create_link_token()
     return render_template('index.html', link_token=link_token)
 
@@ -64,6 +130,9 @@ def logout():
 
 @app.route('/exchange_public_token', methods=['POST'])
 def exchange_public_token():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
     public_token = request.json['public_token']
     access_token = plaid_link.exchange_public_token(public_token)
     if access_token:
@@ -73,6 +142,9 @@ def exchange_public_token():
 
 @app.route('/transactions')
 def show_transactions():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
     access_token = session.get('access_token')
     if not access_token:
         return render_template('error.html', message='No bank account connected')
@@ -82,7 +154,10 @@ def show_transactions():
     start_date = end_date - timedelta(days=30)
     transactions = plaid_client.get_transactions(access_token, start_date, end_date)
     
-    return render_template('transactions.html', transactions=transactions)
+    # Generate personalized goals
+    goals = analyze_transactions(transactions)
+    
+    return render_template('transactions.html', transactions=transactions, goals=goals)
 
 if __name__ == '__main__':
     app.run(debug=True) 
