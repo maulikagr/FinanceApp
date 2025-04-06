@@ -9,7 +9,39 @@
       "experience_to_next_level": 100,
       "coins": 13,
       "streak": 1,
-      "last_login": "2025-04-06T03:48:23.572135",
+      "last_login": "2025-04-06T02:06:43.040578",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": []
+    },
+    "67f24837c7adb97dfcb688d9": {
+      "user_id": "67f24837c7adb97dfcb688d9",
+      "name": "Maulik.Agr",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 0,
+      "coins": 5,
+      "streak": 1,
+      "last_login": "2025-04-06T02:42:40.439147",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": []
+    },
+    "67f24ccf64903968830776ef": {
+      "user_id": "67f24ccf64903968830776ef",
+      "name": "67f24ccf64903968830776ef",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 0,
+      "coins": 115,
+      "streak": 0,
+      "last_login": "2025-04-06T02:51:45.218796",
       "inventory": {
         "outfits": [],
         "accessories": [],
@@ -17,7 +49,7 @@
       },
       "active_missions": [
         {
-          "id": "67f260a7aa8c0f5a8eef93ca",
+          "id": "67f24eb3fd51272c580b3a62",
           "title": "Income Savings",
           "description": "Save $36.03 from today's income (20% of income)",
           "progress": 0,
@@ -29,11 +61,11 @@
           "reward_coins": 5
         },
         {
-          "id": "67f260a7aa8c0f5a8eef93cb",
-          "title": "Save on Shopping",
-          "description": "Target saving $0.81 today on Shopping",
-          "progress": 0,
-          "is_completed": false,
+          "id": "67f24eb3fd51272c580b3a63",
+          "title": "Save on Food and Drink",
+          "description": "Target saving $9.33 today on Food and Drink",
+          "progress": 100,
+          "is_completed": true,
           "mission_type": {
             "name": "Daily Quest"
           },
@@ -41,7 +73,7 @@
           "reward_coins": 5
         },
         {
-          "id": "67f260a7aa8c0f5a8eef93cc",
+          "id": "67f24eb3fd51272c580b3a64",
           "title": "Track Your Spending",
           "description": "Record all your expenses today for better insights",
           "progress": 0,

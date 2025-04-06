@@ -736,22 +736,62 @@ def complete_quest():
     # Find the quest in active missions
     quest = None
     for mission in character.active_missions:
-        if mission['id'] == quest_id:
+        # Handle both dictionary and Mission object cases
+        mission_id = mission.get('id') if isinstance(mission, dict) else str(mission.id)
+        if mission_id == quest_id:
             quest = mission
             break
     
     if not quest:
         return jsonify({"error": "Quest not found"}), 404
     
-    if quest.get('is_completed', False):
+    # Handle both dictionary and Mission object cases
+    is_completed = quest.get('is_completed', False) if isinstance(quest, dict) else quest.is_completed
+    if is_completed:
         return jsonify({"error": "Quest already completed"}), 400
     
+    # Get the quest description
+    description = quest.get('description') if isinstance(quest, dict) else quest.description
+    
+    # Extract the savings amount from the description
+    import re
+    savings_match = re.search(r'\$(\d+(?:\.\d{2})?)', description)
+    if savings_match:
+        savings_amount = float(savings_match.group(1))
+    else:
+        # If no dollar amount found, use a default value
+        savings_amount = 5.0
+    
     # Mark quest as completed
-    quest['is_completed'] = True
-    quest['progress'] = 100
+    if isinstance(quest, dict):
+        quest['is_completed'] = True
+        quest['progress'] = 100
+        reward_coins = quest.get('reward_coins', 5)
+    else:
+        quest.is_completed = True
+        quest.progress = 100
+        reward_coins = quest.reward_coins
     
     # Award coins
-    character.coins += quest.get('reward_coins', 5)
+    character.coins += reward_coins
+    
+    # Update user's financial data with the savings
+    user_financial_data = user_data.find_one({'user_id': user_id})
+    if user_financial_data:
+        # Split the savings between savings and emergency fund (70% savings, 30% emergency)
+        savings_portion = savings_amount * 0.5
+        emergency_portion = savings_amount * 0.5
+        
+        # Update the financial data
+        user_data.update_one(
+            {'user_id': user_id},
+            {
+                '$inc': {
+                    'current_savings': savings_portion,
+                    'emergency_fund': emergency_portion
+                }
+            }
+        )
     
     # Save character state
     gamification.save_state("gamification_state.json")
@@ -759,6 +799,8 @@ def complete_quest():
     return jsonify({
         "status": "success",
         "coins": character.coins,
+        "savings_added": savings_portion,
+        "emergency_added": emergency_portion,
         "message": "Quest completed successfully!"
     })
 
