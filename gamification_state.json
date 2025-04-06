@@ -1,91 +1,78 @@
 {
   "characters": {
-    "user123": {
-      "user_id": "user123",
-      "name": "FinanceMaster",
+    "test_user": {
+      "user_id": "test_user",
+      "name": "TestCharacter",
       "character_class": "Saver",
       "level": 1,
-      "experience": 5,
-      "coins": 10,
+      "experience": 40,
+      "coins": 180,
       "streak": 0,
-      "last_login": "2025-04-05T13:43:23.802219",
+      "last_login": "2025-04-05T17:30:25.253132",
       "inventory": {
         "outfits": [],
         "accessories": [],
         "pets": []
       },
-      "unlocked_features": [],
-      "achievements": []
+      "active_missions": [],
+      "active_challenges": []
+    },
+    "Rishi Rathi": {
+      "user_id": "Rishi Rathi",
+      "name": "0monkeyballs0",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 15,
+      "coins": 130,
+      "streak": 1,
+      "last_login": "2025-04-05T17:35:20.246622",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": [
+        {
+          "title": "Daily Login",
+          "description": "Log in to the app",
+          "mission_type": "Daily",
+          "reward_coins": 10,
+          "reward_exp": 5,
+          "is_completed": true,
+          "start_date": "2025-04-05T17:34:09.901387"
+        },
+        {
+          "title": "Save $10",
+          "description": "Save $10 today",
+          "mission_type": "Daily",
+          "reward_coins": 20,
+          "reward_exp": 10,
+          "is_completed": false,
+          "start_date": "2025-04-05T17:34:09.901399"
+        },
+        {
+          "title": "Weekly Budget Review",
+          "description": "Review your weekly budget",
+          "mission_type": "Weekly",
+          "reward_coins": 50,
+          "reward_exp": 25,
+          "is_completed": false,
+          "start_date": "2025-04-05T17:34:09.901402"
+        }
+      ],
+      "active_challenges": [
+        {
+          "title": "Saving Streak",
+          "description": "Maintain a saving streak for 7 days",
+          "challenge_type": "Saving",
+          "difficulty": "Easy",
+          "reward_coins": 100,
+          "reward_exp": 50,
+          "progress": 0.0,
+          "is_completed": false,
+          "start_date": "2025-04-05T17:34:14.244607"
+        }
+      ]
     }
-  },
-  "active_missions": {
-    "user123": [
-      {
-        "mission_id": "save_target",
-        "title": "Savings Goal",
-        "description": "Reach your monthly savings target",
-        "mission_type": "Monthly",
-        "reward_coins": 200,
-        "reward_exp": 100,
-        "requirements": {
-          "savings_target_reached": 1
-        },
-        "duration_days": 1,
-        "start_date": "2025-04-05T13:43:23.802242",
-        "completion_date": null,
-        "is_completed": false
-      },
-      {
-        "mission_id": "cook_meals",
-        "title": "Home Chef",
-        "description": "Cook 3 meals at home this week",
-        "mission_type": "Weekly",
-        "reward_coins": 50,
-        "reward_exp": 25,
-        "requirements": {
-          "cooked_meals": 3
-        },
-        "duration_days": 1,
-        "start_date": "2025-04-05T13:43:23.802245",
-        "completion_date": null,
-        "is_completed": false
-      },
-      {
-        "mission_id": "daily_login",
-        "title": "Daily Login",
-        "description": "Log in to the app today",
-        "mission_type": "Daily",
-        "reward_coins": 10,
-        "reward_exp": 5,
-        "requirements": {
-          "login": 1
-        },
-        "duration_days": 1,
-        "start_date": "2025-04-05T13:43:23.802246",
-        "completion_date": "2025-04-05T13:43:23.802284",
-        "is_completed": true
-      }
-    ]
-  },
-  "active_challenges": {
-    "user123": [
-      {
-        "challenge_id": "investment_starter",
-        "title": "Investment Starter",
-        "description": "Make your first investment",
-        "challenge_type": "Investing",
-        "reward_coins": 200,
-        "reward_exp": 100,
-        "requirements": {
-          "investments_made": 1
-        },
-        "duration_days": 14,
-        "difficulty": "Easy",
-        "start_date": "2025-04-05T13:43:23.802269",
-        "end_date": "2025-04-19T13:43:23.802269",
-        "is_completed": false,
-        "progress": 0.0
-      }
-    ]
   }
 }

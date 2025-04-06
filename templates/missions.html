@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Missions - Finance Gamification{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-tasks me-2"></i>Your Missions</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% if character.active_missions %}
+                {% for mission in character.active_missions %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 mission-card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ mission.title }}</h5>
+                                <p class="card-text">{{ mission.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-primary me-2">{{ mission.mission_type.name }}</span>
+                                        <span class="badge bg-success me-2">+{{ mission.reward_exp }} XP</span>
+                                        <span class="badge bg-warning">+{{ mission.reward_coins }} coins</span>
+                                    </div>
+                                    {% if mission.is_completed %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">In Progress</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No active missions. Check back later for new missions!
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>About Missions</h4>
+    </div>
+    <div class="card-body">
+        <p>Missions are tasks you can complete to earn coins and experience points. There are different types of missions:</p>
+        <ul>
+            <li><strong>Daily Missions:</strong> Available every day, reset at midnight</li>
+            <li><strong>Weekly Missions:</strong> Available for a week, reset on Sundays</li>
+            <li><strong>Monthly Missions:</strong> Available for a month, reset on the 1st</li>
+            <li><strong>Special Missions:</strong> One-time missions with special rewards</li>
+        </ul>
+        <p>Complete missions to level up your character and earn coins to spend in the shop!</p>
+    </div>
+</div>
+{% endblock %} 

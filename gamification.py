@@ -56,35 +56,65 @@ class Character:
         self.active_challenges = []
     
     def to_dict(self):
+        """Convert the character to a dictionary"""
         return {
             'user_id': self.user_id,
             'name': self.name,
-            'character_class': self.character_class.name,
-            'level': self.level.name,
+            'character_class': self.character_class.value,  # Store the value instead of name
+            'level': self.level.value,  # Store the value instead of name
             'experience': self.experience,
             'coins': self.coins,
             'streak': self.streak,
             'last_login': self.last_login.isoformat(),
-            'inventory': self.inventory,
+            'inventory': {
+                'outfits': [],
+                'accessories': [],
+                'pets': []
+            },
             'active_missions': [m.to_dict() for m in self.active_missions],
             'active_challenges': [c.to_dict() for c in self.active_challenges]
         }
     
     @classmethod
     def from_dict(cls, data):
+        """Create a Character instance from a dictionary"""
+        # Find the character class by value instead of name
+        character_class = None
+        for class_enum in CharacterClass:
+            if class_enum.value == data['character_class']:
+                character_class = class_enum
+                break
+        
+        if not character_class:
+            raise ValueError(f"Invalid character class: {data['character_class']}")
+        
         character = cls(
-            data['user_id'],
-            data['name'],
-            CharacterClass[data['character_class']]
+            user_id=data['user_id'],
+            name=data['name'],
+            character_class=character_class
         )
-        character.level = CharacterLevel[data['level']]
+        
+        # Find the character level by value
+        level = None
+        for level_enum in CharacterLevel:
+            if level_enum.value == data['level']:
+                level = level_enum
+                break
+        
+        if not level:
+            raise ValueError(f"Invalid character level: {data['level']}")
+        
+        character.level = level
         character.experience = data['experience']
         character.coins = data['coins']
-        character.streak = data['streak']
+        character.day_streak = data['streak']
         character.last_login = datetime.fromisoformat(data['last_login'])
-        character.inventory = data['inventory']
-        character.active_missions = [Mission.from_dict(m) for m in data['active_missions']]
-        character.active_challenges = [Challenge.from_dict(c) for c in data['active_challenges']]
+        
+        # Initialize empty lists for missions and challenges
+        # These will be populated by the GamificationSystem.load_state method
+        character.active_missions = []
+        character.active_challenges = []
+        
         return character
 
 
@@ -101,27 +131,38 @@ class Mission:
         self.created_at = datetime.now()
     
     def to_dict(self):
+        """Convert the mission to a dictionary"""
         return {
             'title': self.title,
             'description': self.description,
-            'mission_type': self.mission_type.name,
+            'mission_type': self.mission_type.value,  # Store the value instead of name
             'reward_coins': self.reward_coins,
             'reward_exp': self.reward_exp,
             'is_completed': self.is_completed,
-            'created_at': self.created_at.isoformat()
+            'start_date': self.created_at.isoformat()  # Use start_date to match state file
         }
     
     @classmethod
     def from_dict(cls, data):
+        # Find the mission type by value
+        mission_type = None
+        for type_enum in MissionType:
+            if type_enum.value == data['mission_type']:
+                mission_type = type_enum
+                break
+        
+        if not mission_type:
+            raise ValueError(f"Invalid mission type: {data['mission_type']}")
+        
         mission = cls(
             data['title'],
             data['description'],
-            MissionType[data['mission_type']],
+            mission_type,
             data['reward_coins'],
             data['reward_exp']
         )
         mission.is_completed = data['is_completed']
-        mission.created_at = datetime.fromisoformat(data['created_at'])
+        mission.created_at = datetime.fromisoformat(data['start_date'])  # Use start_date from state file
         return mission
 
 
@@ -140,31 +181,42 @@ class Challenge:
         self.created_at = datetime.now()
     
     def to_dict(self):
+        """Convert the challenge to a dictionary"""
         return {
             'title': self.title,
             'description': self.description,
-            'challenge_type': self.challenge_type.name,
+            'challenge_type': self.challenge_type.value,  # Store the value instead of name
             'difficulty': self.difficulty,
             'reward_coins': self.reward_coins,
             'reward_exp': self.reward_exp,
             'progress': self.progress,
             'is_completed': self.is_completed,
-            'created_at': self.created_at.isoformat()
+            'start_date': self.created_at.isoformat()  # Use start_date to match state file
         }
     
     @classmethod
     def from_dict(cls, data):
+        # Find the challenge type by value
+        challenge_type = None
+        for type_enum in ChallengeType:
+            if type_enum.value == data['challenge_type']:
+                challenge_type = type_enum
+                break
+        
+        if not challenge_type:
+            raise ValueError(f"Invalid challenge type: {data['challenge_type']}")
+        
         challenge = cls(
             data['title'],
             data['description'],
-            ChallengeType[data['challenge_type']],
+            challenge_type,
             data['difficulty'],
             data['reward_coins'],
             data['reward_exp']
         )
-        challenge.progress = data['progress']
+        challenge.progress = data.get('progress', 0.0)  # Use get() with default value
         challenge.is_completed = data['is_completed']
-        challenge.created_at = datetime.fromisoformat(data['created_at'])
+        challenge.created_at = datetime.fromisoformat(data['start_date'])  # Use start_date from state file
         return challenge
 
 
@@ -274,6 +326,86 @@ class GamificationSystem:
         character.inventory.append({"type": item_type, "id": item_id})
         return True
     
+    def update_user_progress(self, user_id, user_data):
+        """Update character progress based on user actions"""
+        character = self.get_character(user_id)
+        if not character:
+            raise ValueError("Character not found")
+        
+        results = {
+            "missions_completed": [],
+            "challenges_completed": [],
+            "level_up": False
+        }
+        
+        # Update missions
+        for mission in character.active_missions:
+            if not mission.is_completed:
+                if self._check_mission_completion(mission, user_data):
+                    mission.is_completed = True
+                    character.coins += mission.reward_coins
+                    character.experience += mission.reward_exp
+                    results["missions_completed"].append(mission.title)
+        
+        # Update challenges
+        for challenge in character.active_challenges:
+            if not challenge.is_completed:
+                progress = self._calculate_challenge_progress(challenge, user_data)
+                challenge.progress = progress
+                if progress >= 100:
+                    challenge.is_completed = True
+                    character.coins += challenge.reward_coins
+                    character.experience += challenge.reward_exp
+                    results["challenges_completed"].append(challenge.title)
+        
+        # Check for level up
+        old_level = character.level
+        character.level = self._calculate_level(character.experience)
+        if character.level != old_level:
+            results["level_up"] = True
+        
+        return results
+    
+    def _check_mission_completion(self, mission, user_data):
+        """Check if a mission is completed based on user data"""
+        if mission.mission_type == MissionType.DAILY:
+            if mission.title == "Daily Login":
+                return user_data.get("login", 0) > 0
+            elif mission.title == "Save $10":
+                return user_data.get("savings_target_reached", 0) > 0
+        elif mission.mission_type == MissionType.WEEKLY:
+            if mission.title == "Weekly Budget Review":
+                return user_data.get("budget_categories_under", 0) >= 3
+        elif mission.mission_type == MissionType.MONTHLY:
+            if mission.title == "Monthly Investment":
+                return user_data.get("investments_made", 0) > 0
+        return False
+    
+    def _calculate_challenge_progress(self, challenge, user_data):
+        """Calculate challenge progress based on user data"""
+        if challenge.challenge_type == ChallengeType.SAVING:
+            return min(100, (user_data.get("days_without_impulse", 0) / 7) * 100)
+        elif challenge.challenge_type == ChallengeType.INVESTING:
+            return min(100, (user_data.get("investments_made", 0) / 5) * 100)
+        elif challenge.challenge_type == ChallengeType.BUDGETING:
+            return min(100, (user_data.get("days_without_eating_out", 0) / 30) * 100)
+        return 0
+    
+    def _calculate_level(self, experience):
+        """Calculate character level based on experience"""
+        if experience < 100:
+            return CharacterLevel.NOVICE
+        elif experience < 300:
+            return CharacterLevel.APPRENTICE
+        elif experience < 600:
+            return CharacterLevel.INTERMEDIATE
+        elif experience < 1000:
+            return CharacterLevel.ADVANCED
+        elif experience < 1500:
+            return CharacterLevel.EXPERT
+        else:
+            return CharacterLevel.MASTER
+    
     def save_state(self, filename):
         state = {
             'characters': {user_id: char.to_dict() for user_id, char in self.characters.items()}
@@ -282,15 +414,41 @@ class GamificationSystem:
             json.dump(state, f, indent=2)
     
     def load_state(self, filename):
+        """Load the game state from a JSON file"""
         try:
             with open(filename, 'r') as f:
                 state = json.load(f)
-                self.characters = {
-                    user_id: Character.from_dict(char_data)
-                    for user_id, char_data in state['characters'].items()
-                }
+            
+            # Load characters
+            for user_id, char_data in state['characters'].items():
+                # Initialize character without missions and challenges
+                character = Character.from_dict(char_data)
+                
+                # Add missions if they exist for this user
+                if user_id in state.get('active_missions', {}):
+                    character.active_missions = [
+                        Mission.from_dict(mission_data)
+                        for mission_data in state['active_missions'][user_id]
+                    ]
+                else:
+                    character.active_missions = []
+                
+                # Add challenges if they exist for this user
+                if user_id in state.get('active_challenges', {}):
+                    character.active_challenges = [
+                        Challenge.from_dict(challenge_data)
+                        for challenge_data in state['active_challenges'][user_id]
+                    ]
+                else:
+                    character.active_challenges = []
+                
+                self.characters[user_id] = character
         except FileNotFoundError:
-            pass  # Start with empty state if file doesn't exist
+            print(f"No state file found at {filename}, starting fresh.")
+        except json.JSONDecodeError:
+            print(f"Error reading state file {filename}, starting fresh.")
+        except Exception as e:
+            print(f"Error loading state: {e}, starting fresh.")
 
 
 # Example usage

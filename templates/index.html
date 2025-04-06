@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Finance App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center">
+                <h2 class="card-title mb-4">Welcome to Finance App</h2>
+                {% if not session.get('access_token') %}
+                    <p class="lead mb-4">Connect your bank account to get started</p>
+                    <button id="link-button" class="btn btn-primary btn-lg">Connect Bank Account</button>
+                {% else %}
+                    <p class="lead mb-4">Your bank account is connected!</p>
+                    <a href="{{ url_for('transactions') }}" class="btn btn-primary btn-lg">View Transactions</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if not session.get('access_token') %}
+<script>
+const handler = Plaid.create({
+    token: '{{ link_token }}',
+    onSuccess: async (public_token, metadata) => {
+        // Send public_token to server
+        const response = await fetch('{{ url_for("exchange_public_token") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ public_token: public_token })
+        });
+        
+        const data = await response.json();
+        if (data.status === 'success') {
+            window.location.reload();
+        } else {
+            alert('Error connecting bank account. Please try again.');
+        }
+    },
+    onExit: (err, metadata) => {
+        if (err != null) {
+            console.error('Error during Link flow:', err);
+        }
+    },
+});
+
+document.getElementById('link-button').onclick = () => {
+    handler.open();
+};
+</script>
+{% endif %}
+{% endblock %} 
