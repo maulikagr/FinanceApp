@@ -1,12 +1,13 @@
 {
   "characters": {
-    "67f22c60a10f8e8baf5c3768": {
-      "user_id": "67f22c60a10f8e8baf5c3768",
-      "name": "piggy",
+    "67f26e078cbdefdc846891b5": {
+      "user_id": "67f26e078cbdefdc846891b5",
+      "name": "67f26e078cbdefdc846891b5",
       "character_class": "Saver",
       "level": 1,
       "experience": 0,
       "experience_to_next_level": 100,
+<<<<<<< HEAD
       "coins": 13,
       "streak": 1,
       "last_login": "2025-04-06T02:06:43.040578",
@@ -27,6 +28,11 @@
       "coins": 5,
       "streak": 1,
       "last_login": "2025-04-06T09:25:23.275559",
+=======
+      "coins": 10,
+      "streak": 0,
+      "last_login": "2025-04-06T05:09:55.066513",
+>>>>>>> 50e12e3b2ee57330c02781d362967408e11b8eb9
       "inventory": {
         "outfits": [],
         "accessories": [],
@@ -34,11 +40,11 @@
       },
       "active_missions": [
         {
-          "id": "67f26ce0ad2c1399ba1a8f76",
+          "id": "67f26f169a4124121d6097b2",
           "title": "Income Savings",
-          "description": "Save $35.21 from today's income (20% of income)",
-          "progress": 0,
-          "is_completed": false,
+          "description": "Save $0.78 from today's income (20% of income)",
+          "progress": 100,
+          "is_completed": true,
           "mission_type": {
             "name": "Daily Quest"
           },
@@ -46,11 +52,11 @@
           "reward_coins": 5
         },
         {
-          "id": "67f26ce0ad2c1399ba1a8f77",
-          "title": "Save on Food and Drink",
-          "description": "Target saving $4.93 today on Food and Drink",
-          "progress": 0,
-          "is_completed": false,
+          "id": "67f26f169a4124121d6097b3",
+          "title": "Save on Travel",
+          "description": "Target saving $3.33 today on Travel",
+          "progress": 100,
+          "is_completed": true,
           "mission_type": {
             "name": "Daily Quest"
           },
@@ -58,9 +64,9 @@
           "reward_coins": 5
         },
         {
-          "id": "67f26ce0ad2c1399ba1a8f78",
-          "title": "Save on Bills and Utilities",
-          "description": "Target saving $2.00 today on Bills and Utilities",
+          "id": "67f26f169a4124121d6097b4",
+          "title": "Track Your Spending",
+          "description": "Record all your expenses today for better insights",
           "progress": 100,
           "is_completed": true,
           "mission_type": {

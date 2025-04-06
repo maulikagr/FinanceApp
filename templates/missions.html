@@ -31,7 +31,7 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <span class="badge" style="background-color: var(--pink-highlight)">{{ mission.mission_type.name }}</span>
-                                        <span class="badge" style="background-color: var(--pink-highlight)" class="ms-2">+{{ mission.reward_coins }} Gold</span>
+                                        <span class="badge" style="background-color: var(--pink-highlight)">+{{ mission.reward_coins }} Gold</span>
                                     </div>
                                     {% if mission.is_completed %}
                                         <span class="badge" style="background-color: var(--pink-highlight)">Completed</span>
@@ -57,6 +57,9 @@
         </div>
     </div>
 </div>
+
+<!-- Alert Container -->
+<div id="alert-container" class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1050;"></div>
 
 <div class="card mt-4" style="background-color: white;">
     <div class="card-header" style="background-color: var(--pink-highlight); color: white;">
@@ -97,7 +100,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const alertContainer = document.getElementById('alert-container');
     const completeButtons = document.querySelectorAll('.complete-quest');
+    
     completeButtons.forEach(button => {
         button.addEventListener('click', async function() {
             const questId = this.dataset.questId;
@@ -134,16 +139,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Replace complete button with completed badge
                     const buttonContainer = completeButton.parentElement;
-                    buttonContainer.innerHTML = '<span class="badge bg-success">Completed</span>';
+                    buttonContainer.innerHTML = '<span class="badge" style="background-color: var(--pink-highlight)">Completed</span>';
                     
-                    // Show success message
+                    // Show success message in alert container
                     const successAlert = document.createElement('div');
-                    successAlert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                    successAlert.className = 'alert alert-success alert-dismissible fade show';
                     successAlert.innerHTML = `
                         <i class="fas fa-check-circle me-2"></i>Quest completed successfully!
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     `;
-                    questCard.appendChild(successAlert);
+                    alertContainer.appendChild(successAlert);
                     
                     // Remove alert after 3 seconds
                     setTimeout(() => {
@@ -152,13 +157,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     // Re-enable the button if the request failed
                     completeButton.disabled = false;
-                    alert(data.message || 'Failed to complete quest. Please try again.');
+                    
+                    // Show error message in alert container
+                    const errorAlert = document.createElement('div');
+                    errorAlert.className = 'alert alert-danger alert-dismissible fade show';
+                    errorAlert.innerHTML = `
+                        <i class="fas fa-exclamation-circle me-2"></i>${data.message || 'Failed to complete quest. Please try again.'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    alertContainer.appendChild(errorAlert);
+                    
+                    // Remove alert after 3 seconds
+                    setTimeout(() => {
+                        errorAlert.remove();
+                    }, 3000);
                 }
             } catch (error) {
                 // Re-enable the button if there was an error
                 completeButton.disabled = false;
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                
+                // Show error message in alert container
+                const errorAlert = document.createElement('div');
+                errorAlert.className = 'alert alert-danger alert-dismissible fade show';
+                errorAlert.innerHTML = `
+                    <i class="fas fa-exclamation-circle me-2"></i>An error occurred. Please try again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                alertContainer.appendChild(errorAlert);
+                
+                // Remove alert after 3 seconds
+                setTimeout(() => {
+                    errorAlert.remove();
+                }, 3000);
             }
         });
     });
