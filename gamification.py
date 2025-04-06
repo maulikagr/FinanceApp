@@ -108,8 +108,14 @@ class Character:
         character.streak = data['streak']
         character.last_login = datetime.fromisoformat(data['last_login'])
         
-        # Initialize empty list for missions
+        # Convert mission dictionaries back to Mission objects
         character.active_missions = []
+        for mission_data in data.get('active_missions', []):
+            if isinstance(mission_data, dict):
+                mission = Mission.from_dict(mission_data)
+                character.active_missions.append(mission)
+            else:
+                character.active_missions.append(mission_data)
         
         return character
 

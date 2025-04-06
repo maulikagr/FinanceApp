@@ -70,9 +70,25 @@
       "character_class": "Saver",
       "level": 1,
       "experience": 0,
-      "coins": 90,
+      "coins": 5,
       "streak": 1,
-      "last_login": "2025-04-06T02:28:41.524627",
+      "last_login": "2025-04-06T02:42:40.439147",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": []
+    },
+    "67f24ccf64903968830776ef": {
+      "user_id": "67f24ccf64903968830776ef",
+      "name": "67f24ccf64903968830776ef",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 0,
+      "coins": 115,
+      "streak": 0,
+      "last_login": "2025-04-06T02:51:45.218796",
       "inventory": {
         "outfits": [],
         "accessories": [],
@@ -80,7 +96,7 @@
       },
       "active_missions": [
         {
-          "id": "67f24a8c2eb559eb896ccdb5",
+          "id": "67f24eb3fd51272c580b3a62",
           "title": "Income Savings",
           "description": "Save $35.21 from today's income (20% of income)",
           "progress": 100,
@@ -92,9 +108,9 @@
           "reward_coins": 5
         },
         {
-          "id": "67f24a8c2eb559eb896ccdb6",
-          "title": "Track Your Spending",
-          "description": "Record all your expenses today for better insights",
+          "id": "67f24eb3fd51272c580b3a63",
+          "title": "Save on Food and Drink",
+          "description": "Target saving $9.33 today on Food and Drink",
           "progress": 100,
           "is_completed": true,
           "mission_type": {
@@ -104,7 +120,7 @@
           "reward_coins": 5
         },
         {
-          "id": "67f24a8c2eb559eb896ccdb7",
+          "id": "67f24eb3fd51272c580b3a64",
           "title": "Track Your Spending",
           "description": "Record all your expenses today for better insights",
           "progress": 100,
