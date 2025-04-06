@@ -48,6 +48,11 @@
             font-weight: bold;
             margin-bottom: 5px;
         }
+        .quest-description {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 8px;
+        }
         .quest-progress {
             background-color: #eee;
             height: 10px;
@@ -125,6 +130,12 @@
             font-style: italic;
             margin-top: 20px;
         }
+        .quest-details {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -133,24 +144,18 @@
     <div class="right-panel">
         <div class="daily-quests">
             <h1>Daily Quests</h1>
+            {% for goal in goals %}
             <div class="quest">
-                <div class="quest-title">Save $20 Today</div>
+                <div class="quest-title">{{ goal.title }}</div>
+                <div class="quest-description">{{ goal.description }}</div>
                 <div class="quest-progress">
-                    <div class="progress-bar" style="width: 45%"></div>
+                    <div class="progress-bar" data-progress="{{ (goal.progress / goal.target * 100)|round }}"></div>
+                </div>
+                <div class="quest-details">
+                    Progress: ${{ goal.progress }} / ${{ goal.target }}
                 </div>
             </div>
-            <div class="quest">
-                <div class="quest-title">Track 5 Transactions</div>
-                <div class="quest-progress">
-                    <div class="progress-bar" style="width: 60%"></div>
-                </div>
-            </div>
-            <div class="quest">
-                <div class="quest-title">Stay Under Budget</div>
-                <div class="quest-progress">
-                    <div class="progress-bar" style="width: 75%"></div>
-                </div>
-            </div>
+            {% endfor %}
         </div>
 
         <div class="transaction-container">
@@ -174,5 +179,13 @@
             {% endif %}
         </div>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.progress-bar').forEach(bar => {
+            bar.style.width = bar.dataset.progress + '%';
+        });
+    });
+    </script>
 </body>
 </html> 
