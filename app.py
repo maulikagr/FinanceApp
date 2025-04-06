@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, session, redirect, url_for
+from flask import Flask, jsonify, request, render_template, session, redirect, url_for, flash, g
 from plaid_link import PlaidLinkSetup
 from plaid_transactions import PlaidClient
 import os
@@ -9,6 +9,7 @@ from bson.objectid import ObjectId
 import google.generativeai as genai
 import json
 import certifi
+from gamification import GamificationSystem, CharacterClass, CharacterLevel
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Required for session management
@@ -16,12 +17,11 @@ app.secret_key = os.urandom(24)  # Required for session management
 # Add abs filter to Jinja2 environment
 app.jinja_env.filters['abs'] = abs
 
+# Initialize services
 plaid_link = PlaidLinkSetup()
 plaid_client = PlaidClient()
-
-# Configure Gemini
-genai.configure(api_key='AIzaSyAZgjfdVJ2N3L0ET5u9DcNgZq4f2_klKQI')
-model = genai.GenerativeModel('gemini-1.5-pro')
+gamification = GamificationSystem()
+gamification.load_state("gamification_state.json")
 
 # MongoDB Atlas connection
 client = MongoClient(os.getenv('MONGODB_URI'), 
@@ -31,6 +31,25 @@ client = MongoClient(os.getenv('MONGODB_URI'),
 db = client['finance_app']
 users = db['users']  # Store user authentication data
 user_data = db['userData']  # Store user financial data
+
+# Shop items
+shop_items = {
+    'Outfits': [
+        {'id': 'outfit1', 'name': 'Business Suit', 'description': 'A professional business suit', 'cost': 100},
+        {'id': 'outfit2', 'name': 'Casual Wear', 'description': 'Comfortable casual clothing', 'cost': 50},
+        {'id': 'outfit3', 'name': 'Athletic Gear', 'description': 'Sporty athletic clothing', 'cost': 75},
+    ],
+    'Accessories': [
+        {'id': 'acc1', 'name': 'Smart Watch', 'description': 'Track your fitness and finances', 'cost': 150},
+        {'id': 'acc2', 'name': 'Briefcase', 'description': 'Carry your important documents', 'cost': 80},
+        {'id': 'acc3', 'name': 'Sunglasses', 'description': 'Look cool while managing money', 'cost': 60},
+    ],
+    'Pets': [
+        {'id': 'pet1', 'name': 'Money Cat', 'description': 'A lucky cat that brings wealth', 'cost': 200},
+        {'id': 'pet2', 'name': 'Piggy Bank', 'description': 'A cute piggy that helps you save', 'cost': 150},
+        {'id': 'pet3', 'name': 'Golden Retriever', 'description': 'A loyal companion for your financial journey', 'cost': 250},
+    ]
+}
 
 def analyze_transactions(transactions, savings_goal):
     """Analyze transactions and generate personalized daily quests using Gemini"""
@@ -277,6 +296,21 @@ def check_and_refresh_quests(user_id):
     
     return goals['quests']
 
+@app.before_request
+def before_request():
+    if 'user_id' in session:
+        g.character = gamification.get_character(session['user_id'])
+        if not g.character:
+            # Create a character if one doesn't exist
+            g.character = gamification.create_character(
+                user_id=session['user_id'],
+                name=session['user_id'],
+                character_class=CharacterClass.SAVER
+            )
+            gamification.save_state("gamification_state.json")
+    else:
+        g.character = None
+
 @app.route('/')
 def index():
     if 'user_id' not in session:
@@ -286,13 +320,27 @@ def index():
     user_financial_data = user_data.find_one({'user_id': session['user_id']})
     has_bank = user_financial_data and 'access_token' in user_financial_data
     
+    # Get character data
+    character = gamification.get_character(session['user_id'])
+    
+    # Update login streak
+    if character:
+        now = datetime.now()
+        if (now - character.last_login).days >= 1:
+            character.streak += 1
+        else:
+            character.streak = 1
+        character.last_login = now
+        gamification.save_state("gamification_state.json")
+    
     # Create a new link token for Plaid
     link_token = plaid_link.create_link_token(session['user_id'])
     
     return render_template('index.html', 
                          link_token=link_token,
                          has_bank=has_bank,
-                         bank_name=user_financial_data.get('bank_name', '') if user_financial_data else '')
+                         bank_name=user_financial_data.get('bank_name', '') if user_financial_data else '',
+                         character=character)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -300,6 +348,7 @@ def login():
         email = request.form['email']
         password = request.form['password']
         
+        # Check MongoDB for user
         user = users.find_one({'email': email})
         
         if user and check_password_hash(user['password'], password):
@@ -320,43 +369,226 @@ def login():
     
     return render_template('login.html')
 
-@app.route('/create_account', methods=['POST'])
+@app.route('/create_account', methods=['GET', 'POST'])
 def create_account():
+    if request.method == 'GET':
+        return render_template('create_account.html')
+    
+    # Handle POST request
     email = request.form['email']
     password = request.form['password']
     confirm_password = request.form['confirmPassword']
     
     if password != confirm_password:
-        return render_template('login.html', error='Passwords do not match')
+        return render_template('create_account.html', error='Passwords do not match')
     
+    # Check if email already exists
     if users.find_one({'email': email}):
-        return render_template('login.html', error='Email already exists')
+        return render_template('create_account.html', error='Email already exists')
     
-    # Create user in authentication database
-    result = users.insert_one({
-        'email': email,
-        'password': generate_password_hash(password)
-    })
-    
-    # Create initial financial data record
-    user_id = str(result.inserted_id)
-    user_data.insert_one({
-        'user_id': user_id,
-        'savings_goal': 1000,
-        'current_savings': 0,
-        'emergency_fund': 0,
-        'transactions': [],
-        'balances': {},
-        'completed_quests': [],
-        'current_quests': []
-    })
-    
-    return redirect(url_for('login'))
+    try:
+        # Create user in authentication database
+        result = users.insert_one({
+            'email': email,
+            'password': generate_password_hash(password)
+        })
+        
+        # Create initial financial data record
+        user_id = str(result.inserted_id)
+        user_data.insert_one({
+            'user_id': user_id,
+            'savings_goal': 1000,
+            'current_savings': 0,
+            'emergency_fund': 0,
+            'transactions': [],
+            'balances': {},
+            'completed_quests': [],
+            'current_quests': []
+        })
+        
+        # Create character for the new user
+        try:
+            character = gamification.create_character(
+                user_id=user_id,
+                name=email.split('@')[0],  # Use email username as character name
+                character_class=CharacterClass.SAVER
+            )
+            gamification.assign_missions(user_id)
+            gamification.assign_challenge(user_id)
+            gamification.save_state("gamification_state.json")
+        except Exception as e:
+            print(f"Error creating character: {e}")
+        
+        flash('Account created successfully! Please login.', 'success')
+        return redirect(url_for('login'))
+    except Exception as e:
+        print(f"Error creating account: {e}")
+        return render_template('create_account.html', error='An error occurred while creating your account')
 
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('login'))
+
+@app.route('/missions')
+def missions():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    character = gamification.get_character(user_id)
+    
+    if not character:
+        return redirect(url_for('index'))
+    
+    # Get user's financial data
+    user_financial_data = user_data.find_one({'user_id': user_id})
+    if not user_financial_data:
+        return redirect(url_for('index'))
+    
+    # Only generate new quests if there are no active missions
+    if not character.active_missions:
+        # Get transactions and generate quests
+        transactions = user_financial_data.get('transactions', [])
+        savings_goal = user_financial_data.get('savings_goal', 1000)
+        goals = analyze_transactions(transactions, savings_goal)
+        
+        # Convert quests to missions format
+        missions_list = []
+        for quest in goals['quests']:
+            mission = {
+                'id': str(ObjectId()),
+                'title': quest['title'],
+                'description': quest['description'],
+                'progress': quest['progress'],
+                'is_completed': quest.get('completed', False),
+                'mission_type': {'name': 'Daily Quest'},
+                'reward_exp': 5,
+                'reward_coins': 5
+            }
+            missions_list.append(mission)
+        
+        # Update character's active missions
+        character.active_missions = missions_list
+    
+    # Ensure character has coins attribute
+    if not hasattr(character, 'coins'):
+        character.coins = 0
+    
+    # Save character state
+    gamification.save_state("gamification_state.json")
+    
+    return render_template('missions.html', 
+                         character=character,
+                         financial_data=user_financial_data)
+
+@app.route('/shop')
+def shop():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    character = gamification.get_character(user_id)
+    
+    if not character:
+        return redirect(url_for('index'))
+    
+    # Get user's financial data
+    user_financial_data = user_data.find_one({'user_id': user_id})
+    
+    # Ensure character has coins attribute
+    if not hasattr(character, 'coins'):
+        character.coins = 0
+        gamification.save_state("gamification_state.json")
+    
+    # Ensure character has inventory attribute
+    if not hasattr(character, 'inventory'):
+        character.inventory = []
+        gamification.save_state("gamification_state.json")
+    
+    return render_template('shop.html', 
+                         character=character, 
+                         shop_items=shop_items,
+                         financial_data=user_financial_data)
+
+@app.route('/purchase/<item_id>', methods=['POST'])
+def purchase(item_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    character = gamification.get_character(user_id)
+    
+    if not character:
+        return redirect(url_for('index'))
+    
+    # Find the item in shop_items
+    item = None
+    for category in shop_items.values():
+        for shop_item in category:
+            if shop_item['id'] == item_id:
+                item = shop_item
+                break
+        if item:
+            break
+    
+    if not item:
+        flash('Item not found.', 'error')
+        return redirect(url_for('shop'))
+    
+    if character.coins < item['cost']:
+        flash('Not enough gold to purchase this item.', 'error')
+        return redirect(url_for('shop'))
+    
+    # Purchase the item
+    character.coins -= item['cost']
+    
+    # Add the item to character's inventory
+    if 'inventory' not in character.__dict__:
+        character.inventory = []
+    character.inventory.append(item)
+    
+    # Update character in MongoDB
+    gamification.save_state("gamification_state.json")
+    
+    flash(f'Successfully purchased {item["name"]}!', 'success')
+    return redirect(url_for('shop'))
+
+@app.route('/update_progress', methods=['POST'])
+def update_progress():
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    user_id = session['user_id']
+    character = gamification.get_character(user_id)
+    
+    if not character:
+        return jsonify({"error": "Character not found"}), 404
+    
+    # Get user data from request
+    user_data_request = request.json
+    
+    # Get current financial data
+    user_financial_data = user_data.find_one({'user_id': user_id})
+    if user_financial_data:
+        # Combine financial data with request data
+        financial_data = {
+            'savings': user_financial_data.get('current_savings', 0),
+            'emergency_fund': user_financial_data.get('emergency_fund', 0),
+            'transactions': len(user_financial_data.get('transactions', [])),
+            'completed_quests': len(user_financial_data.get('completed_quests', [])),
+            **user_data_request  # Add any additional data from the request
+        }
+    else:
+        financial_data = user_data_request
+    
+    # Update progress
+    results = gamification.update_user_progress(user_id, financial_data)
+    
+    # Save state
+    gamification.save_state("gamification_state.json")
+    
+    return jsonify(results)
 
 @app.route('/exchange_public_token', methods=['POST'])
 def exchange_public_token():
@@ -429,88 +661,98 @@ def show_transactions():
     savings_percentage = min(100, (current_savings / savings_goal * 100) if savings_goal > 0 else 0)
     emergency_percentage = min(100, (emergency_fund / (savings_goal * 0.5) * 100) if savings_goal > 0 else 0)
     
-    # Use AI to generate quests based on transaction history
-    goals = analyze_transactions(transactions, savings_goal)
+    # Calculate financial analysis
+    total_income = 0
+    total_expenses = 0
+    category_spending = {}
     
-    # Add completion status to quests
-    completed_quests = user_financial_data.get('completed_quests', [])
-    for quest in goals['quests']:
-        quest['completed'] = quest['title'] in completed_quests
+    for transaction in transactions:
+        amount = float(transaction['amount'])
+        if amount > 0:
+            total_income += amount
+        else:
+            total_expenses += abs(amount)
+            category = transaction.get('category', ['Uncategorized'])[0]
+            category_spending[category] = category_spending.get(category, 0) + abs(amount)
+    
+    # Calculate monthly averages
+    monthly_income = total_income / 30 if total_income > 0 else 0
+    monthly_expenses = total_expenses / 30 if total_expenses > 0 else 0
+    
+    # Calculate time to reach goal
+    monthly_savings = monthly_income - monthly_expenses
+    months_to_goal = savings_goal / monthly_savings if monthly_savings > 0 else float('inf')
+    
+    # Format financial summary
+    financial_summary = f"""
+    Monthly Income: ${monthly_income:.2f}
+    Monthly Expenses: ${monthly_expenses:.2f}
+    Monthly Savings: ${monthly_savings:.2f}
+    
+    Top Spending Categories:
+    """
+    for category, amount in sorted(category_spending.items(), key=lambda x: x[1], reverse=True)[:3]:
+        financial_summary += f"\n{category}: ${amount:.2f}"
+    
+    time_estimate = f"Based on your current savings rate, it will take approximately {int(months_to_goal)} months to reach your goal." if months_to_goal != float('inf') else "Unable to calculate time estimate with current savings rate."
     
     return render_template('transactions.html',
                          transactions=transactions, 
-                         goals=goals,
                          savings_goal=savings_goal,
                          current_savings=current_savings,
                          emergency_fund=emergency_fund,
                          savings_percentage=savings_percentage,
                          emergency_percentage=emergency_percentage,
-                         balances=balances)
+                         balances=balances,
+                         goals={
+                             'time_estimate': time_estimate,
+                             'financial_summary': financial_summary
+                         })
 
 @app.route('/complete_quest', methods=['POST'])
 def complete_quest():
     if 'user_id' not in session:
-        return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
-        
-    quest_id = request.json.get('quest_id')
-    if quest_id is None:
-        return jsonify({'status': 'error', 'message': 'No quest ID provided'}), 400
-        
-    user_financial_data = user_data.find_one({'user_id': session['user_id']})
-    if not user_financial_data:
-        return jsonify({'status': 'error', 'message': 'User not found'}), 404
-        
-    # Get the quest details
-    transactions = user_financial_data.get('transactions', [])
-    savings_goal = user_financial_data.get('savings_goal', 1000)
-    goals = analyze_transactions(transactions, savings_goal)
+        return jsonify({"error": "Not logged in"}), 401
     
-    if quest_id >= len(goals['quests']):
-        return jsonify({'status': 'error', 'message': 'Invalid quest ID'}), 400
-        
-    quest = goals['quests'][quest_id]
+    data = request.json
+    quest_id = data.get('quest_id')
     
-    # Calculate savings amount from quest description
-    import re
-    amount_match = re.search(r'\$(\d+\.?\d*)', quest['description'])
-    if amount_match:
-        amount = float(amount_match.group(1))
-    else:
-        amount = 0
-        
-    # Split savings between goal and emergency fund
-    goal_amount = amount * 0.5
-    emergency_amount = amount * 0.5
+    if not quest_id:
+        return jsonify({"error": "Quest ID is required"}), 400
     
-    # Get current balances
-    current_savings = user_financial_data.get('current_savings', 0)
-    emergency_fund = user_financial_data.get('emergency_fund', 0)
+    user_id = session['user_id']
+    character = gamification.get_character(user_id)
     
-    # Update balances
-    current_savings += goal_amount
-    emergency_fund += emergency_amount
+    if not character:
+        return jsonify({"error": "Character not found"}), 404
     
-    # Update completed quests
-    completed_quests = user_financial_data.get('completed_quests', [])
-    if quest['title'] not in completed_quests:
-        completed_quests.append(quest['title'])
+    # Find the quest in active missions
+    quest = None
+    for mission in character.active_missions:
+        if mission['id'] == quest_id:
+            quest = mission
+            break
     
-    # Update user financial data in database
-    user_data.update_one(
-        {'user_id': session['user_id']},
-        {
-            '$set': {
-                'current_savings': current_savings,
-                'emergency_fund': emergency_fund,
-                'completed_quests': completed_quests
-            }
-        }
-    )
+    if not quest:
+        return jsonify({"error": "Quest not found"}), 404
+    
+    if quest.get('is_completed', False):
+        return jsonify({"error": "Quest already completed"}), 400
+    
+    # Mark quest as completed
+    quest['is_completed'] = True
+    quest['progress'] = 100
+    
+    # Award coins
+    character.coins += quest.get('reward_coins', 5)
+    
+    # Save character state
+    gamification.save_state("gamification_state.json")
     
     return jsonify({
-        'status': 'success',
-        'current_savings': current_savings,
-        'emergency_fund': emergency_fund
+        "status": "success",
+        "coins": character.coins,
+        "message": "Quest completed successfully!"
     })
 
 @app.route('/add_transaction', methods=['POST'])
@@ -552,6 +794,18 @@ def add_transaction():
     except Exception as e:
         print(f"Error adding transaction: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('error.html', 
+                         error_title='Page Not Found',
+                         error_message='The page you are looking for does not exist.'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('error.html',
+                         error_title='Internal Server Error',
+                         error_message='An unexpected error has occurred.'), 500
 
 if __name__ == '__main__':
     app.run(debug=True) 

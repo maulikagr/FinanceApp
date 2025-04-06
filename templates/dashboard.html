@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Finance Gamification{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-user-circle me-2"></i>Character Profile</h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if character.character_class.name == 'SAVER' %}
+                        <i class="fas fa-piggy-bank fa-4x text-success mb-3"></i>
+                    {% elif character.character_class.name == 'INVESTOR' %}
+                        <i class="fas fa-chart-line fa-4x text-primary mb-3"></i>
+                    {% elif character.character_class.name == 'BUDGETER' %}
+                        <i class="fas fa-calculator fa-4x text-warning mb-3"></i>
+                    {% elif character.character_class.name == 'EARNER' %}
+                        <i class="fas fa-money-bill-wave fa-4x text-danger mb-3"></i>
+                    {% endif %}
+                    <h3>{{ character.name }}</h3>
+                    <span class="badge bg-primary">{{ character.character_class.value }}</span>
+                </div>
+                
+                <div class="character-stats">
+                    <div class="mb-3">
+                        <h5>Level {{ character.level.value }} - {{ character.level.name }}</h5>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: {{ (character.experience % 100) }}%;" 
+                                 aria-valuenow="{{ character.experience % 100 }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ character.experience % 100 }}/100 XP
+                            </div>
+                        </div>
+                        <small class="text-muted">Total XP: {{ character.experience }}</small>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h5><i class="fas fa-coins text-warning"></i> {{ character.coins }}</h5>
+                            <small class="text-muted">Coins</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h5><i class="fas fa-fire text-danger"></i> {{ character.streak }}</h5>
+                            <small class="text-muted">Day Streak</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-tasks me-2"></i>Active Missions</h4>
+                <a href="{{ url_for('missions') }}" class="btn btn-sm btn-outline-light">View All</a>
+            </div>
+            <div class="card-body">
+                {% if character.active_missions %}
+                    <div class="row">
+                        {% for mission in character.active_missions[:3] %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 mission-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ mission.title }}</h5>
+                                        <p class="card-text">{{ mission.description }}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-{{ 'success' if mission.is_completed else 'secondary' }}">
+                                                {{ 'Completed' if mission.is_completed else mission.mission_type.value }}
+                                            </span>
+                                            <div>
+                                                <small class="text-muted me-2">
+                                                    <i class="fas fa-coins text-warning"></i> {{ mission.reward_coins }}
+                                                </small>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-star text-primary"></i> {{ mission.reward_exp }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No active missions. Visit the Missions page to get started!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-trophy me-2"></i>Active Challenges</h4>
+                <a href="{{ url_for('challenges') }}" class="btn btn-sm btn-outline-light">View All</a>
+            </div>
+            <div class="card-body">
+                {% if character.active_challenges %}
+                    <div class="row">
+                        {% for challenge in character.active_challenges[:2] %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100 challenge-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ challenge.title }}</h5>
+                                        <p class="card-text">{{ challenge.description }}</p>
+                                        <div class="progress mb-2">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ challenge.progress }}%"
+                                                 aria-valuenow="{{ challenge.progress }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                {{ challenge.progress }}%
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-{{ 'success' if challenge.is_completed else 'info' }}">
+                                                {{ 'Completed' if challenge.is_completed else challenge.difficulty }}
+                                            </span>
+                                            <div>
+                                                <small class="text-muted me-2">
+                                                    <i class="fas fa-coins text-warning"></i> {{ challenge.reward_coins }}
+                                                </small>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-star text-primary"></i> {{ challenge.reward_exp }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No active challenges. Visit the Challenges page to get started!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

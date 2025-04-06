@@ -1,0 +1,121 @@
+{
+  "characters": {
+    "test_user": {
+      "user_id": "test_user",
+      "name": "TestCharacter",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 40,
+      "coins": 180,
+      "streak": 0,
+      "last_login": "2025-04-05T17:30:25.253132",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": []
+    },
+    "Rishi Rathi": {
+      "user_id": "Rishi Rathi",
+      "name": "0monkeyballs0",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 25,
+      "coins": 150,
+      "streak": 0,
+      "last_login": "2025-04-05T23:26:54.566738",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": []
+    },
+    "rishi Rathi": {
+      "user_id": "rishi Rathi",
+      "name": "1234",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 5,
+      "coins": 110,
+      "streak": 0,
+      "last_login": "2025-04-05T23:26:42.920474",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": []
+    },
+    "67f23896f2de899e39ae433b": {
+      "user_id": "67f23896f2de899e39ae433b",
+      "name": "67f23896f2de899e39ae433b",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 0,
+      "coins": 205,
+      "streak": 1,
+      "last_login": "2025-04-06T02:06:43.040578",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": []
+    },
+    "67f24837c7adb97dfcb688d9": {
+      "user_id": "67f24837c7adb97dfcb688d9",
+      "name": "Maulik.Agr",
+      "character_class": "Saver",
+      "level": 1,
+      "experience": 0,
+      "coins": 90,
+      "streak": 1,
+      "last_login": "2025-04-06T02:28:41.524627",
+      "inventory": {
+        "outfits": [],
+        "accessories": [],
+        "pets": []
+      },
+      "active_missions": [
+        {
+          "id": "67f24a8c2eb559eb896ccdb5",
+          "title": "Income Savings",
+          "description": "Save $35.21 from today's income (20% of income)",
+          "progress": 100,
+          "is_completed": true,
+          "mission_type": {
+            "name": "Daily Quest"
+          },
+          "reward_exp": 5,
+          "reward_coins": 5
+        },
+        {
+          "id": "67f24a8c2eb559eb896ccdb6",
+          "title": "Track Your Spending",
+          "description": "Record all your expenses today for better insights",
+          "progress": 100,
+          "is_completed": true,
+          "mission_type": {
+            "name": "Daily Quest"
+          },
+          "reward_exp": 5,
+          "reward_coins": 5
+        },
+        {
+          "id": "67f24a8c2eb559eb896ccdb7",
+          "title": "Track Your Spending",
+          "description": "Record all your expenses today for better insights",
+          "progress": 100,
+          "is_completed": true,
+          "mission_type": {
+            "name": "Daily Quest"
+          },
+          "reward_exp": 5,
+          "reward_coins": 5
+        }
+      ]
+    }
+  }
+}
