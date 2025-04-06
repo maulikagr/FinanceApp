@@ -3,10 +3,12 @@ from plaid_link import PlaidLinkSetup
 from plaid_transactions import PlaidClient
 import os
 from datetime import datetime, timedelta, date
-import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 import google.generativeai as genai
 import json
+from pymongo import MongoClient
+from werkzeug.security import generate_password_hash, check_password_hash
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Required for session management
@@ -16,19 +18,6 @@ plaid_client = PlaidClient()
 # Configure Gemini
 genai.configure(api_key='AIzaSyAZgjfdVJ2N3L0ET5u9DcNgZq4f2_klKQI')
 model = genai.GenerativeModel('gemini-1.5-pro')
-
-# Initialize database
-def init_db():
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  email TEXT UNIQUE NOT NULL,
-                  password TEXT NOT NULL)''')
-    conn.commit()
-    conn.close()
-
-init_db()
 
 def analyze_transactions(transactions):
     # Convert transactions to a format Gemini can understand
@@ -126,6 +115,11 @@ Please provide the quests in this exact JSON format, using the actual spending p
                 "description": f"Find ways to reduce {top_categories[2][0]} expenses"
             }
         ]
+      
+# MongoDB Atlas connection
+client = MongoClient(os.getenv('MONGODB_URI'))
+db = client.finance_app
+users = db.users
 
 @app.route('/')
 def index():
@@ -139,15 +133,12 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+     
+        user = users.find_one({'email': email})
         
-        conn = sqlite3.connect('users.db')
-        c = conn.cursor()
-        c.execute('SELECT id, password FROM users WHERE email = ?', (email,))
-        user = c.fetchone()
-        conn.close()
-        
-        if user and check_password_hash(user[1], password):
-            session['user_id'] = user[0]
+        if user and check_password_hash(user['password'], password):
+            session['user_id'] = str(user['_id'])
+
             return redirect(url_for('index'))
         else:
             return render_template('login.html', error='Invalid email or password')
@@ -163,18 +154,15 @@ def create_account():
     if password != confirm_password:
         return render_template('login.html', error='Passwords do not match')
     
-    conn = sqlite3.connect('users.db')
-    c = conn.cursor()
-    
-    try:
-        c.execute('INSERT INTO users (email, password) VALUES (?, ?)',
-                 (email, generate_password_hash(password)))
-        conn.commit()
-        conn.close()
-        return redirect(url_for('login'))
-    except sqlite3.IntegrityError:
-        conn.close()
+    if users.find_one({'email': email}):
         return render_template('login.html', error='Email already exists')
+    
+    users.insert_one({
+        'email': email,
+        'password': generate_password_hash(password)
+    })
+    
+    return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():

@@ -3,3 +3,4 @@ plaid-python==14.0.0
 python-dotenv==1.0.1
 pymongo==4.6.1
 google-generativeai==0.3.2 
+python-dateutil>=2.8.2 
