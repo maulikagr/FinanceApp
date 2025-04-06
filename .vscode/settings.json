@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "undefined/subscriptions/a72bea08-8e7a-40b5-89ae-10d771ff3912/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/PiggyPal",
+    "appService.deploySubpath": "."
+}
