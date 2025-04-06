@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, render_template, session, redirect, u
 from plaid_link import PlaidLinkSetup
 from plaid_transactions import PlaidClient
 import os
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
@@ -12,12 +12,16 @@ import certifi
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Required for session management
+
+# Add abs filter to Jinja2 environment
+app.jinja_env.filters['abs'] = abs
+
 plaid_link = PlaidLinkSetup()
 plaid_client = PlaidClient()
 
-# # Configure Gemini
-# genai.configure(api_key='AIzaSyAZgjfdVJ2N3L0ET5u9DcNgZq4f2_klKQI')
-# model = genai.GenerativeModel('gemini-1.5-pro')
+# Configure Gemini
+genai.configure(api_key='AIzaSyAZgjfdVJ2N3L0ET5u9DcNgZq4f2_klKQI')
+model = genai.GenerativeModel('gemini-1.5-pro')
 
 # MongoDB Atlas connection
 client = MongoClient(os.getenv('MONGODB_URI'), 
@@ -32,22 +36,32 @@ def analyze_transactions(transactions, savings_goal):
     """Analyze transactions and generate personalized daily quests using Gemini"""
     try:
         # Convert transactions to a format suitable for Gemini
-        total_spent = 0
-        total_income = 0
-        category_spending = {}
+        transaction_summary = {
+            'total_spent': 0,
+            'total_income': 0,
+            'category_spending': {},
+            'transactions': []
+        }
         
         # Only consider last 30 days of transactions for monthly average
         for transaction in transactions:
             amount = float(transaction['amount'])
             if amount < 0:  # Expenses
-                total_spent += abs(amount)
+                transaction_summary['total_spent'] += abs(amount)
                 category = transaction.get('category', ['Uncategorized'])[0]
-                category_spending[category] = category_spending.get(category, 0) + abs(amount)
+                transaction_summary['category_spending'][category] = transaction_summary['category_spending'].get(category, 0) + abs(amount)
             else:  # Income
-                total_income += amount
+                transaction_summary['total_income'] += amount
+            
+            transaction_summary['transactions'].append({
+                'date': transaction['date'],
+                'amount': amount,
+                'category': transaction.get('category', ['Uncategorized'])[0],
+                'name': transaction.get('name', '')
+            })
         
         # If we have no transactions or spending data, return early with default values
-        if not transactions or (total_spent == 0 and total_income == 0):
+        if not transactions or (transaction_summary['total_spent'] == 0 and transaction_summary['total_income'] == 0):
             return {
                 "time_estimate": "Unable to calculate time estimate. Please add some transactions first.",
                 "quests": [
@@ -69,107 +83,113 @@ def analyze_transactions(transactions, savings_goal):
                 ]
             }
         
-        # Calculate monthly figures
-        monthly_expenses = total_spent  # Since we're already looking at last 30 days
-        monthly_income = total_income
-        avg_daily_spending = monthly_expenses / 30
+        # Prepare prompt for Gemini
+        prompt = f"""
+        Analyze the following financial data and provide personalized savings recommendations:
         
-        # Calculate potential savings (20% from income and 20% from expense reduction)
-        income_savings = monthly_income * 0.20
-        expense_savings = monthly_expenses * 0.20
-        total_potential_savings = income_savings + expense_savings
+        Monthly Income: ${transaction_summary['total_income']:.2f}
+        Monthly Expenses: ${transaction_summary['total_spent']:.2f}
+        Savings Goal: ${savings_goal:.2f}
         
-        # Split savings between goal and emergency fund
-        goal_savings = total_potential_savings * 0.5  # 50% to goal
-        emergency_savings = total_potential_savings * 0.5  # 50% to emergency fund
+        Top Spending Categories:
+        {json.dumps(transaction_summary['category_spending'], indent=2)}
         
-        # Calculate time to reach goal (in months)
-        if goal_savings > 0:
-            months_to_goal = savings_goal / goal_savings
-            years = int(months_to_goal / 12)
-            remaining_months = int(months_to_goal % 12)
-            
-            # Format the time estimate message
-            time_parts = []
-            if years > 0:
-                time_parts.append(f"{years} year{'s' if years > 1 else ''}")
-            if remaining_months > 0:
-                time_parts.append(f"{remaining_months} month{'s' if remaining_months > 1 else ''}")
-            
-            time_str = " and ".join(time_parts)
-            
-            time_estimate = (
-                f"Based on your current income of ${monthly_income:.2f}/month and expenses of ${monthly_expenses:.2f}/month, "
-                f"saving 20% of income (${income_savings:.2f}/month) and reducing expenses by 20% (${expense_savings:.2f}/month) "
-                f"would take {time_str} to reach your goal of ${savings_goal:.2f}. "
-                f"You'll also build an emergency fund of ${emergency_savings:.2f}/month."
-            )
-        else:
-            time_estimate = "Unable to calculate time estimate. Please add your regular income and expenses."
+        Recent Transactions:
+        {json.dumps(transaction_summary['transactions'][-5:], indent=2)}
         
-        # Calculate potential savings from each category
-        potential_savings = {}
-        for category, amount in category_spending.items():
-            potential_savings[category] = amount * 0.2  # 20% savings potential from each category
+        Please provide:
+        1. A time estimate to reach the savings goal
+        2. Three personalized daily quests to help achieve the goal
+        3. Specific recommendations for reducing expenses in the top spending categories
         
-        # Sort categories by potential savings
-        sorted_categories = sorted(potential_savings.items(), key=lambda x: x[1], reverse=True)
+        Format the response as a JSON object with 'time_estimate' and 'quests' fields.
+        Each quest should have 'title', 'progress', and 'description' fields.
+        """
         
-        # Create personalized quests based on top spending categories and income
-        quests = []
-        
-        # Add income-based quest
-        daily_income_savings = income_savings / 30
-        quests.append({
-            "title": "Income Savings",
-            "progress": 0,
-            "description": f"Save ${daily_income_savings:.2f} from today's income (20% of income)"
-        })
-        
-        # Add expense reduction quests
-        for category, savings in sorted_categories[:2]:  # Top 2 spending categories
-            daily_category_savings = savings / 30
-            quests.append({
-                "title": f"Save on {category}",
-                "progress": 0,
-                "description": f"Target saving ${daily_category_savings:.2f} today on {category}"
-            })
-        
-        # If we don't have enough categories, add generic quests
-        while len(quests) < 3:
-            quests.append({
-                "title": "Track Your Spending",
-                "progress": 0,
-                "description": "Record all your expenses today for better insights"
-            })
-        
-        return {
-            "time_estimate": time_estimate,
-            "quests": quests[:3]  # Ensure we only return 3 quests
-        }
+        # Get AI-generated insights
+        response = model.generate_content(prompt)
+        try:
+            insights = json.loads(response.text)
+            return insights
+        except json.JSONDecodeError:
+            # Fallback to traditional analysis if AI response is invalid
+            return generate_fallback_insights(transaction_summary, savings_goal)
         
     except Exception as e:
         print(f"Error in analyze_transactions: {str(e)}")
-        return {
-            "time_estimate": "Unable to calculate time estimate due to an error. Please try again.",
-            "quests": [
-                {
-                    "title": "Daily Savings Challenge",
-                    "progress": 0,
-                    "description": f"Save ${(savings_goal/30):.2f} today towards your goal"
-                },
-                {
-                    "title": "Expense Tracking",
-                    "progress": 0,
-                    "description": "Record all your transactions today"
-                },
-                {
-                    "title": "Budget Review",
-                    "progress": 0,
-                    "description": "Review your spending categories and find areas to save"
-                }
-            ]
-        }
+        return generate_fallback_insights(transaction_summary, savings_goal)
+
+def generate_fallback_insights(transaction_summary, savings_goal):
+    """Generate insights using traditional analysis when AI is unavailable"""
+    monthly_expenses = transaction_summary['total_spent']
+    monthly_income = transaction_summary['total_income']
+    
+    # Calculate potential savings (20% from income and 20% from expense reduction)
+    income_savings = monthly_income * 0.20
+    expense_savings = monthly_expenses * 0.20
+    total_potential_savings = income_savings + expense_savings
+    
+    # Split savings between goal and emergency fund
+    goal_savings = total_potential_savings * 0.5
+    emergency_savings = total_potential_savings * 0.5
+    
+    # Calculate time to reach goal
+    if goal_savings > 0:
+        months_to_goal = savings_goal / goal_savings
+        years = int(months_to_goal / 12)
+        remaining_months = int(months_to_goal % 12)
+        
+        time_parts = []
+        if years > 0:
+            time_parts.append(f"{years} year{'s' if years > 1 else ''}")
+        if remaining_months > 0:
+            time_parts.append(f"{remaining_months} month{'s' if remaining_months > 1 else ''}")
+        
+        time_str = " and ".join(time_parts)
+        time_estimate = (
+            f"Based on your current income of ${monthly_income:.2f}/month and expenses of ${monthly_expenses:.2f}/month, "
+            f"saving 20% of income (${income_savings:.2f}/month) and reducing expenses by 20% (${expense_savings:.2f}/month) "
+            f"would take {time_str} to reach your goal of ${savings_goal:.2f}. "
+            f"You'll also build an emergency fund of ${emergency_savings:.2f}/month."
+        )
+    else:
+        time_estimate = "Unable to calculate time estimate. Please add your regular income and expenses."
+    
+    # Sort categories by spending
+    sorted_categories = sorted(transaction_summary['category_spending'].items(), key=lambda x: x[1], reverse=True)
+    
+    # Create quests based on top spending categories
+    quests = []
+    
+    # Add income-based quest
+    daily_income_savings = income_savings / 30
+    quests.append({
+        "title": "Income Savings",
+        "progress": 0,
+        "description": f"Save ${daily_income_savings:.2f} from today's income (20% of income)"
+    })
+    
+    # Add expense reduction quests
+    for category, amount in sorted_categories[:2]:
+        daily_category_savings = (amount * 0.2) / 30
+        quests.append({
+            "title": f"Save on {category}",
+            "progress": 0,
+            "description": f"Target saving ${daily_category_savings:.2f} today on {category}"
+        })
+    
+    # Add generic quest if needed
+    while len(quests) < 3:
+        quests.append({
+            "title": "Track Your Spending",
+            "progress": 0,
+            "description": "Record all your expenses today for better insights"
+        })
+    
+    return {
+        "time_estimate": time_estimate,
+        "quests": quests[:3]
+    }
 
 def store_user_financial_data(user_id, access_token):
     # Get transactions and balances
@@ -200,12 +220,62 @@ def store_user_financial_data(user_id, access_token):
         upsert=True
     )
 
+def check_and_refresh_quests(user_id):
+    """Check if quests need to be refreshed and update them if necessary"""
+    user = users.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        return None
+    
+    # Get current date at midnight
+    today = date.today()
+    
+    # Check if we have a last refresh date
+    last_refresh = user.get('last_quest_refresh')
+    if last_refresh:
+        last_refresh_date = date.fromisoformat(last_refresh)
+        if last_refresh_date == today:
+            return None  # Quests already refreshed today
+    
+    # Get user's financial data
+    user_financial_data = user_data.find_one({'user_id': user_id})
+    if not user_financial_data or 'transactions' not in user_financial_data:
+        return None
+    
+    # Get transactions and generate new quests
+    transactions = user_financial_data['transactions']
+    savings_goal = user.get('savings_goal', 1000)
+    goals = analyze_transactions(transactions, savings_goal)
+    
+    # Update user with new quests and refresh date
+    users.update_one(
+        {'_id': ObjectId(user_id)},
+        {
+            '$set': {
+                'last_quest_refresh': str(today),
+                'completed_quests': [],  # Reset completed quests
+                'current_quests': goals['quests']  # Store current quests
+            }
+        }
+    )
+    
+    return goals['quests']
+
 @app.route('/')
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    
+    # Check if user already has a bank connected
+    user_financial_data = user_data.find_one({'user_id': session['user_id']})
+    has_bank = user_financial_data and 'access_token' in user_financial_data
+    
+    # Create a new link token for Plaid
     link_token = plaid_link.create_link_token(session['user_id'])
-    return render_template('index.html', link_token=link_token)
+    
+    return render_template('index.html', 
+                         link_token=link_token,
+                         has_bank=has_bank,
+                         bank_name=user_financial_data.get('bank_name', '') if user_financial_data else '')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -295,7 +365,14 @@ def show_transactions():
     if not user_financial_data or 'transactions' not in user_financial_data:
         return render_template('error.html', message='No bank account connected or no transactions available')
     
-    transactions = user_financial_data['transactions']
+    # Process transactions to ensure amounts are properly formatted
+    transactions = []
+    for t in user_financial_data['transactions']:
+        processed_t = t.copy()
+        processed_t['amount'] = float(t['amount'])
+        processed_t['abs_amount'] = abs(float(t['amount']))
+        transactions.append(processed_t)
+    
     balances = user_financial_data.get('balances', {})
     
     # Initialize user and default values
@@ -317,7 +394,11 @@ def show_transactions():
     current_savings = user.get('current_savings', 0)
     emergency_fund = user.get('emergency_fund', 0)
     
-    # Generate personalized goals
+    # Calculate progress percentages
+    savings_percentage = min(100, (current_savings / savings_goal * 100) if savings_goal > 0 else 0)
+    emergency_percentage = min(100, (emergency_fund / (savings_goal * 0.5) * 100) if savings_goal > 0 else 0)
+    
+    # Use AI to generate quests based on transaction history
     goals = analyze_transactions(transactions, savings_goal)
     
     # Add completion status to quests
@@ -325,12 +406,14 @@ def show_transactions():
     for quest in goals['quests']:
         quest['completed'] = quest['title'] in completed_quests
     
-    return render_template('transactions.html', 
+    return render_template('transactions.html',
                          transactions=transactions, 
                          goals=goals,
                          savings_goal=savings_goal,
                          current_savings=current_savings,
-                         emergency_fund=emergency_fund)
+                         emergency_fund=emergency_fund,
+                         savings_percentage=savings_percentage,
+                         emergency_percentage=emergency_percentage)
 
 @app.route('/complete_quest', methods=['POST'])
 def complete_quest():
@@ -346,10 +429,11 @@ def complete_quest():
         return jsonify({'status': 'error', 'message': 'User not found'}), 404
         
     # Get the quest details
-    access_token = session.get('access_token')
-    end_date = date.today()
-    start_date = end_date - timedelta(days=30)
-    transactions = plaid_client.get_transactions(access_token, start_date, end_date)
+    user_financial_data = user_data.find_one({'user_id': session['user_id']})
+    if not user_financial_data or 'transactions' not in user_financial_data:
+        return jsonify({'status': 'error', 'message': 'No financial data available'}), 400
+        
+    transactions = user_financial_data['transactions']
     goals = analyze_transactions(transactions, user.get('savings_goal', 1000))
     
     if quest_id >= len(goals['quests']):
@@ -369,9 +453,13 @@ def complete_quest():
     goal_amount = amount * 0.5
     emergency_amount = amount * 0.5
     
-    # Update user's balances
-    current_savings = user.get('current_savings', 0) + goal_amount
-    emergency_fund = user.get('emergency_fund', 0) + emergency_amount
+    # Get current balances
+    current_savings = user.get('current_savings', 0)
+    emergency_fund = user.get('emergency_fund', 0)
+    
+    # Update balances
+    current_savings += goal_amount
+    emergency_fund += emergency_amount
     
     # Update completed quests
     completed_quests = user.get('completed_quests', [])

@@ -1,4 +1,4 @@
-# AI Finance App
+# PiggyPal
 
 An AI-driven personal finance application that helps users build healthy financial habits through gamification and intelligent insights.
 
